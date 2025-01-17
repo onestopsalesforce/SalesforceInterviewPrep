@@ -1,0 +1,133 @@
+/* General Styles */
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background-color: #121212;
+    color: #e0e0e0;
+    display: flex;
+    height: 100vh;
+}
+
+/* Header Section */
+.header {
+    width: 100%;
+    text-align: center;
+    background-color: #1e1e1e;
+    padding: 20px 0;
+    position: fixed;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.header h1 {
+    margin: 0;
+    color: white;
+    font-size: 2em;
+}
+
+.header p {
+    margin: 5px 0 0;
+    color: #ff5722;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 300px;
+    background-color: #1e1e1e;
+    padding: 80px 20px 20px;
+    height: 100%;
+    overflow-y: auto;
+    border-right: 1px solid #333;
+}
+
+.nav-item > a {
+    color: #bbb;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.nav-item > a:hover {
+    color: #fff;
+}
+
+.square-indicator {
+    width: 10px;
+    height: 10px;
+    background-color: #ff5722;
+    margin-right: 10px;
+    transition: transform 0.3s ease;
+}
+
+.child-items {
+    display: none;
+    padding-left: 30px;
+    border-left: 1px solid #555;
+    margin-top: 5px;
+}
+
+.expanded > .child-items {
+    display: block;
+}
+
+.expanded > a .square-indicator {
+    transform: rotate(45deg);
+}
+
+/* Content */
+.content {
+    flex: 1;
+    padding: 100px 20px 20px;
+    overflow-y: auto;
+}
+
+.hidden {
+    display: none;
+}
+
+
+/* Global body styles */
+
+  
+  /* Header styles (retain the orange color) */
+  h1, h2 {
+    color: #ff5722;  /* Retained header color from the provided styles */
+  }
+  
+  /* Paragraph and list item spacing */
+  p, li {
+    margin-bottom: 10px;
+  }
+  
+  /* Code block styles */
+  code {
+    background-color: #1e1e1e;
+    color: #ffcc00;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-family: Consolas, monospace;
+  }
+  
+  /* Preformatted block styles */
+  pre {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-x: auto;
+    font-family: Consolas, monospace;
+  }
+  
+  /* Unordered list styles */
+  ul {
+    margin-left: 20px;
+  }
+  
+  /* Container layout */
+  .container {
+    max-width: 800px;
+    margin: auto;
+  }
+  
