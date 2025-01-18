@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript Function Parameters: By Value or Reference</title>
+    
+</head>
+<body>
+    <h1>JavaScript Function Parameters: By Value or Reference</h1>
+
+    <p>In JavaScript, function parameters are passed <strong>by value</strong>. However, the behavior differs based on the type of the data being passed:</p>
+
+    <h2>1. Primitive Types</h2>
+    <p>Primitive types (e.g., <code>number</code>, <code>string</code>, <code>boolean</code>, <code>undefined</code>, <code>null</code>, <code>bigint</code>, <code>symbol</code>) are always passed <strong>by value</strong>. This means a copy of the value is passed to the function, and changes made to the parameter inside the function <strong>do not affect</strong> the original variable.</p>
+
+    <div class="example">
+        <h3>Example:</h3>
+        <pre><code>function modifyPrimitive(val) {
+    val = 42; // Changing the local copy
+    console.log("Inside function:", val); // 42
+}
+
+let num = 10;
+modifyPrimitive(num);
+console.log("Outside function:", num); // 10 (unchanged)
+        </code></pre>
+    </div>
+
+    <h2>2. Objects and Arrays (Reference Types)</h2>
+    <p>Objects and arrays are also passed <strong>by value</strong>, but the value being passed is a <strong>reference</strong> to the object in memory. This means changes to the object's properties inside the function <strong>do affect</strong> the original object.</p>
+
+    <div class="example">
+        <h3>Example 1: Modifying an Object Property</h3>
+        <pre><code>function modifyObject(obj) {
+    obj.name = "Alice"; // Modifying the object
+    console.log("Inside function:", obj);
+}
+
+let person = { name: "Bob" };
+modifyObject(person);
+console.log("Outside function:", person); // { name: "Alice" } (modified)
+        </code></pre>
+    </div>
+
+    <div class="example">
+        <h3>Example 2: Reassigning an Object</h3>
+        <pre><code>function reassignObject(obj) {
+    obj = { name: "Charlie" }; // Reassigning to a new object
+    console.log("Inside function:", obj);
+}
+
+let person = { name: "Bob" };
+reassignObject(person);
+console.log("Outside function:", person); // { name: "Bob" } (unchanged)
+        </code></pre>
+    </div>
+
+    <h3>Key Takeaways:</h3>
+    <ul>
+        <li><strong>Primitive Types:</strong> Always passed by value. Modifications inside the function do not affect the original variable.</li>
+        <li><strong>Objects and Arrays:</strong> The reference to the object is passed by value. Modifying the object inside the function affects the original object, but reassigning the parameter does not affect the original object.</li>
+    </ul>
+
+    <h2>Simplified Rule</h2>
+    <p>
+        <strong>Primitive values:</strong> Immutable and passed as a copy.<br>
+        <strong>Objects/arrays:</strong> References are passed by value, allowing modification of the original data but not reassignment.
+    </p>
+</body>
+</html>
