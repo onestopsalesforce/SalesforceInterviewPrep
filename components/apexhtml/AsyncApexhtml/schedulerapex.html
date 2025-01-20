@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Learn about Salesforce Scheduler Apex, including implementation, approaches, CRON expressions, and key objects like CronJobDetail and CronTrigger.">
+    <title>Scheduler Apex in Salesforce</title>
+    
+</head>
+<body>
+    <article>
+        <h1>Scheduler Apex in Salesforce</h1>
+        <p>Scheduler Apex in Salesforce allows you to schedule execution of Apex classes or methods at specific intervals or times. It can be used for various purposes, including running Apex Batch jobs, executing regular Apex classes, and making callouts to external systems. Here's a comprehensive guide to implementing Scheduler Apex and its use cases.</p>
+        
+        <h2>Implementing Scheduler Apex</h2>
+        <p>To implement Scheduler Apex, a class must implement the <code>Schedulable</code> interface. This requires defining the <code>execute(SchedulableContext sc)</code> method, which contains the logic to be executed when the scheduler triggers the class.</p>
+        <pre><code>public class MyScheduler implements Schedulable {
+    public void execute(SchedulableContext sc) {
+        // Logic to execute when the scheduler triggers
+        System.debug('Scheduler executed at: ' + Datetime.now());
+    }
+}</code></pre>
+
+        <h2>Scheduler Apex Use Cases</h2>
+        <ul>
+            <li>Scheduling Apex Batch jobs.</li>
+            <li>Running regular Apex classes or specific methods periodically.</li>
+            <li>Performing callouts to external systems when implementing <code>Database.AllowsCallouts</code>.</li>
+        </ul>
+
+        <h2>Approaches for Scheduling Apex</h2>
+        <h3>1. Set Up → Apex Class or Scheduled Job</h3>
+        <p>Salesforce provides a user-friendly interface to schedule Apex classes:</p>
+        <ul>
+            <li>Navigate to <strong>Setup</strong> → <strong>Apex Classes</strong>.</li>
+            <li>Select the class you want to schedule and click on <strong>Schedule Apex</strong>.</li>
+            <li>Use the built-in Schedule Builder to define the schedule:
+                <ul>
+                    <li><strong>Weekly:</strong> Choose specific days of the week or select all days for daily execution.</li>
+                    <li><strong>Monthly:</strong> Choose specific dates or ranges within the month.</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>2. Using CRON Expressions</h3>
+        <p>Salesforce allows you to schedule Apex classes programmatically using <code>System.schedule</code> and a CRON expression.</p>
+        <p>CRON syntax format: <code>Seconds Minutes Hours Day_of_month Month Day_of_week Optional_year</code></p>
+        <ul>
+            <li><code>0 0 * * * ?</code>: Executes every hour.</li>
+            <li><code>0 5 * * * ?</code>: Executes at the 5th minute of every hour (e.g., 10:05, 11:05).</li>
+        </ul>
+        <p>Example:</p>
+        <pre><code>System.schedule('My Scheduled Job', '0 0 12 * * ?', new MyScheduler());</code></pre>
+        
+
+        <h2>Objects for Scheduler Apex</h2>
+        <ul>
+            <li><strong>CronJobDetail:</strong> Represents a scheduled job's details. Use it to query job metadata.</li>
+            <li><strong>CronTrigger:</strong> Represents the actual execution schedule. Use it to monitor and manage scheduled jobs.</li>
+        </ul>
+        <pre><code>// Query scheduled jobs
+List<CronTrigger> jobs = [SELECT Id, CronJobDetail.Name, NextFireTime
+                          FROM CronTrigger
+                          WHERE State = 'WAITING'];
+System.debug('Scheduled Jobs: ' + jobs);</code></pre>
+
+        <h2>Making Callouts in Scheduled Jobs</h2>
+        <p>If your scheduler needs to perform HTTP callouts, the class must also implement the <code>Database.AllowsCallouts</code> interface. Example:</p>
+        <pre><code>public class MySchedulerWithCallout implements Schedulable, Database.AllowsCallouts {
+    public void execute(SchedulableContext sc) {
+        Http http = new Http();
+        HttpRequest req = new HttpRequest();
+        req.setEndpoint('https://api.example.com');
+        req.setMethod('GET');
+        HttpResponse res = http.send(req);
+        System.debug('Callout Response: ' + res.getBody());
+    }
+}</code></pre>
+
+        <h2>Key Interview Points</h2>
+        <ul>
+            <li>Explain the difference between using CRON expressions and the built-in Schedule Builder.</li>
+            <li>Demonstrate knowledge of objects like <code>CronJobDetail</code> and <code>CronTrigger</code>.</li>
+            <li>Discuss scenarios where <code>Database.AllowsCallouts</code> is required.</li>
+            <li>Be prepared to explain how to test Scheduler Apex using test methods and mocking time.</li>
+        </ul>
+
+        <h2>Testing Scheduled Apex</h2>
+        <p>Scheduler Apex can be tested using the <code>Test.startTest()</code> and <code>Test.stopTest()</code> methods. Example:</p>
+        <pre><code>@isTest
+private class SchedulerTest {
+    @isTest
+    static void testScheduledJob() {
+        Test.startTest();
+        String cronExpression = '0 0 12 * * ?';
+        System.schedule('Test Scheduled Job', cronExpression, new MyScheduler());
+        Test.stopTest();
+
+        // Assert scheduled job existence
+        CronTrigger job = [SELECT Id, State FROM CronTrigger WHERE CronJobDetail.Name = 'Test Scheduled Job' LIMIT 1];
+        System.assertEquals('WAITING', job.State);
+    }
+}</code></pre>
+
+        <p>With this comprehensive understanding, you’ll be well-prepared for both practical implementations and interview discussions on Scheduler Apex in Salesforce.</p>
+    </article>
+</body>
+</html>
