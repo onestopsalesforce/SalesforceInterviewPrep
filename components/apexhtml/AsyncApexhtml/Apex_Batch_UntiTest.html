@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batch Testing with ApexTestQueueItem and ApexTestResult</title>
+    
+</head>
+<body>
+
+    <h1>Testing a Batch Class Using ApexTestQueueItem and ApexTestResult</h1>
+    
+    <h2>Step 1: Define the Batch Class</h2>
+    <p>We will create a simple batch class that processes Account records and updates the Phone field.</p>
+    
+    <pre>
+<code>
+public class AccountBatchClass implements Database.Batchable<SObject> {
+    // Define the start method to fetch records to process
+    public Database.QueryLocator start(Database.BatchableContext bc) {
+        return Database.getQueryLocator('SELECT Id, Name FROM Account');
+    }
+
+    // Define the execute method to process the records in batches
+    public void execute(Database.BatchableContext bc, List<Account> records) {
+        for (Account acc : records) {
+            acc.Phone = '123-456-7890';  // Simulate some processing
+        }
+        update records;  // Update the records in the database
+    }
+
+    // Define the finish method to do any post-processing after all batches are done
+    public void finish(Database.BatchableContext bc) {
+        System.debug('Batch processing finished.');
+    }
+}
+</code>
+    </pre>
+
+    <h2>Step 2: Write a Test Class to Test the Batch Class</h2>
+    <p>We will now create a test class to test the batch class. In the test, we will:</p>
+    <ul>
+        <li>Enqueue the batch to execute.</li>
+        <li>Query ApexTestQueueItem to check the status.</li>
+        <li>Wait for the batch to finish.</li>
+        <li>Query ApexTestResult to check the outcome of the test and verify that it passed.</li>
+    </ul>
+
+    <pre>
+<code>
+@isTest
+public class AccountBatchClassTest {
+    
+    @isTest static void testBatch() {
+        // Step 1: Create test data (Account records)
+        List<Account> accounts = new List<Account>();
+        for (Integer i = 0; i < 10; i++) {
+            accounts.add(new Account(Name = 'Test Account ' + i));
+        }
+        insert accounts;
+
+        // Step 2: Start the batch execution
+        Test.startTest();
+        AccountBatchClass batch = new AccountBatchClass();
+        Id batchJobId = Database.executeBatch(batch, 5);  // Set the batch size to 5
+        Test.stopTest();
+
+        // Step 3: Query ApexTestQueueItem to check the status of the batch job
+        List<ApexTestQueueItem> testQueueItems = [SELECT Id, Status, ApexClassId, TestTimestamp FROM ApexTestQueueItem WHERE Status = 'Queued'];
+        
+        // Wait until the batch completes
+        while (testQueueItems.size() > 0) {
+            testQueueItems = [SELECT Id, Status, ApexClassId FROM ApexTestQueueItem WHERE Status = 'Queued'];
+            System.debug('Batch job is still queued...');
+            // Sleep for a short duration to avoid hitting governor limits
+            System.sleep(2000);
+        }
+
+        // Step 4: Retrieve the test results from ApexTestResult
+        List<ApexTestResult> testResults = [SELECT Id, ApexClassId, Outcome, Message FROM ApexTestResult WHERE ApexClassId = :batchJobId];
+        
+        // Step 5: Assert the outcome of the test
+        System.assertNotEquals(testResults.size(), 0, 'Test result should exist.');
+        for (ApexTestResult result : testResults) {
+            System.debug('Test Outcome: ' + result.Outcome);
+            if (result.Outcome == 'Failed') {
+                System.debug('Failure Message: ' + result.Message);
+            }
+            System.assert(result.Outcome == 'Passed', 'Batch test did not pass.');
+        }
+
+        // Step 6: Assert that the batch processed the accounts correctly
+        List<Account> updatedAccounts = [SELECT Phone FROM Account WHERE Id IN :accounts];
+        for (Account acc : updatedAccounts) {
+            System.assert(acc.Phone == '123-456-7890', 'Phone field was not updated correctly.');
+        }
+    }
+}
+</code>
+    </pre>
+
+    <h2>Explanation of the Test Class</h2>
+    <p>
+        1. <strong>Create Test Data</strong>: We create several Account records that will be processed by the batch.
+    </p>
+    <p>
+        2. <strong>Start the Batch</strong>: The batch is enqueued with <code>Database.executeBatch(batch, 5)</code>. We wrap the execution in <code>Test.startTest()</code> and <code>Test.stopTest()</code> to ensure the batch runs within the test context.
+    </p>
+    <p>
+        3. <strong>Monitor the Status of the Batch</strong>: We query <code>ApexTestQueueItem</code> to check the status of the batch job. If it is still in the queue (<code>Status = 'Queued'</code>), we wait for it to finish.
+    </p>
+    <p>
+        4. <strong>Check the Test Result</strong>: After the batch finishes, we query <code>ApexTestResult</code> to check the test outcome. We assert that the outcome is <code>'Passed'</code>. If it failed, we log the error message.
+    </p>
+    <p>
+        5. <strong>Verify the Results</strong>: After the batch finishes, we query the Account records to ensure that the Phone field was updated correctly, as specified in the batch logic.
+    </p>
+
+    <h2>Running the Test</h2>
+    <ul>
+        <li>The test runs the batch and monitors its execution.</li>
+        <li>It checks the status of the test using <code>ApexTestQueueItem</code> and waits until the batch job completes.</li>
+        <li>After the batch finishes, it retrieves the result from <code>ApexTestResult</code> and asserts that the test passed.</li>
+        <li>Finally, the test verifies that the Phone field in the Account records was updated as expected.</li>
+    </ul>
+
+    <h2>Key Points</h2>
+    <ul>
+        <li><strong>ApexTestQueueItem</strong>: Tracks the status of the batch job in the test queue.</li>
+        <li><strong>ApexTestResult</strong>: Contains the result of the test, indicating whether it passed or failed.</li>
+        <li><strong>Test.startTest()</strong> and <strong>Test.stopTest()</strong>: Ensures that the batch job runs within the test context, allowing us to manage governor limits effectively.</li>
+        <li><strong>System.assert()</strong>: Validates that the batch logic works as expected, including verifying that data was processed correctly.</li>
+    </ul>
+
+    <h2>Conclusion</h2>
+    <p>
+        This example demonstrates how to use <code>ApexTestQueueItem</code> and <code>ApexTestResult</code> to manage and track the execution of a batch job in Salesforce. The test class ensures that the batch job processes the data correctly and handles all possible outcomes.
+    </p>
+
+</body>
+</html>

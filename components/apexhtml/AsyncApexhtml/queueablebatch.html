@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queueable Apex in Salesforce</title>
+    
+</head>
+<body>
+    <article>
+        <h1>Queueable Apex in Salesforce</h1>
+        <p>Queueable Apex is a powerful feature in Salesforce that allows developers to execute asynchronous operations in a flexible manner. It is commonly used for complex tasks that need to run in the background, like data processing, external system callouts, or other long-running tasks.</p>
+        
+        <h2>Key Concepts</h2>
+        <ul>
+            <li><strong>Implementing the <code>System.Queueable</code> interface:</strong> To create a Queueable job, you need to implement the <code>System.Queueable</code> interface in your Apex class.</li>
+            <li><strong>Defining the <code>execute(QueueableContext context)</code> method:</strong> This method contains the logic that you want to run when the job is executed. It takes the <code>QueueableContext</code> object, which allows you to manage the job context.</li>
+            <li><strong>Using <code>System.enqueueJob</code>:</strong> To execute a Queueable job, use <code>System.enqueueJob</code> with an instance of the class that implements the <code>Queueable</code> interface.</li>
+            <li><strong>Accepting primitive and object data types:</strong> Queueable jobs can accept both primitive data types (like <code>String</code>, <code>Integer</code>, etc.) and custom object types in the constructor.</li>
+            <li><strong>Chaining multiple Queueable jobs:</strong> You can chain multiple Queueable jobs by calling <code>System.enqueueJob</code> from within another Queueable job. However, there is a limit of one job chained at a time.</li>
+            <li><strong>Future Methods and Queueable:</strong> According to Salesforce documentation, while only one future method can be called per transaction, multiple Queueable jobs can be called in a single transaction.</li>
+        </ul>
+
+        <h2>Passing Parameters to Queueable Jobs</h2>
+        <p>Queueable jobs can accept parameters through the constructor of the class. You can pass any data type—primitives or objects—when you instantiate the Queueable class.</p>
+
+        <h2>Delay Queueable Jobs</h2>
+        <p>You can delay the execution of a Queueable job by specifying a delay in minutes. The delay can be set using the following syntax:</p>
+        <code>System.enqueueJob(class, timeInMinutes);</code>
+        <p>This will execute the Queueable job after the specified number of minutes. The job will then appear in the Apex Jobs section of Salesforce.</p>
+
+        <h2>QueueableContext: Managing Job Execution</h2>
+        <p>The <code>QueueableContext</code> object is passed as a parameter to the <code>execute</code> method in the Queueable job. This context object contains the job ID, which can be used to track or manage the job's progress.</p>
+        
+        <p><strong>Example Usage of <code>QueueableContext</code>:</strong></p>
+        <pre><code>public class MyQueueableClass implements System.Queueable {
+    public void execute(QueueableContext context) {
+        // Get the job ID
+        String jobId = context.getJobId();
+        
+        // Logic for your background process
+        System.debug('Job ID: ' + jobId);
+        
+        // Example of chaining another Queueable job
+        AnotherQueueableJob job = new AnotherQueueableJob();
+        System.enqueueJob(job);
+    }
+}</code></pre>
+        <p>In this example, the <code>execute</code> method uses <code>context.getJobId()</code> to retrieve the job ID associated with the current Queueable job. This can be useful for logging purposes, tracking the job's status, or debugging the execution.</p>
+
+        <h2>Queueable Job Limits</h2>
+        <ul>
+            <li><strong>Viewing Jobs:</strong> You can view the status of queued jobs from the Apex Jobs interface in Salesforce Setup.</li>
+            <li><strong>Chaining Limit:</strong> Only one Queueable job can be chained from another Queueable job. However, there is no strict limit on the depth of chained jobs.</li>
+            <li><strong>Queueable from Future Methods:</strong> You can call a Queueable job from an <code>@future</code> method, but you cannot call a future method from a Queueable job. This ensures proper sequencing of asynchronous operations.</li>
+            <li><strong>Transaction Limit:</strong> You can enqueue up to 50 Queueable jobs in a single transaction using <code>System.enqueueJob</code>. There is no strict limit on the depth of chained jobs, but the total number of jobs in a transaction is capped at 50.</li>
+        </ul>
+
+        <h2>Conclusion</h2>
+        <p>Queueable Apex is a versatile tool for performing background tasks in Salesforce. By understanding how to implement it correctly, pass parameters, manage delays, and chain jobs, you can optimize your asynchronous processes and handle large-scale operations efficiently. Always remember the key limits and best practices for working with Queueable jobs, ensuring your code performs effectively and stays within Salesforce's governor limits.</p>
+    </article>
+</body>
+</html>

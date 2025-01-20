@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Batch Overview</title>
+    
+</head>
+<body>
+
+<header>
+    <h1>Apex Batch Overview</h1>
+</header>
+
+<article>
+    <h2>Introduction</h2>
+    <p>Apex Batch allows you to handle large volumes of records and process them asynchronously in manageable chunks. It is essential when working with Salesforce data, especially for operations like data migration, complex calculations, and scheduled processes. Below is a detailed overview of the Apex Batch concept and how it works.</p>
+
+    <h2>Start Method</h2>
+    <p>The <code>start</code> method defines the number of <code>execute</code> methods that will be processed based on the number of records returned by the <code>QueryLocator</code> or <code>Iterable</code>. The records are divided by the batch size specified in <code>Database.executeBatch</code>. If no batch size is provided, the default value of 200 is used.</p>
+    <p>Each <code>execute</code> method runs in its own transaction, meaning if an exception occurs, only the chunk of data in that specific transaction is rolled back, while other chunks will be processed or committed.</p>
+    <p>The maximum number of records that can be returned in the <code>Database.QueryLocator</code> object is 50 million.</p>
+
+    <h2>Database.Batchable Interface</h2>
+    <p>When you extend <code>Database.Batchable</code>, the <code>start</code> method typically returns a <code>Database.QueryLocator</code>, which is used to fetch records from Salesforce objects like Account, Contact, etc.</p>
+
+    <h3>Database.Batchable&lt;T&gt; (Custom Class or Non-SObject Type)</h3>
+    <p>When the type parameter is a custom class or non-SObject type, the <code>start</code> method must return an <code>Iterable&lt;T&gt;</code>. This <code>Iterable&lt;T&gt;</code> could be a list, set, or any object implementing the <code>Iterable</code> interface, where <code>T</code> is the custom type.</p>
+
+    <h2>Preference: Database.QueryLocator vs Iterable&lt;T&gt;</h2>
+    <h3>Use Database.QueryLocator if:</h3>
+    <ul>
+        <li>You are querying Salesforce records using SOQL with no complex logic involved.</li>
+        <li>You are working with large datasets, as Salesforce handles pagination, chunking, and load balancing efficiently.</li>
+    </ul>
+
+    <h3>Use Iterable&lt;T&gt; if:</h3>
+    <ul>
+        <li>You need to load data from an external system or source other than Salesforce.</li>
+        <li>The data loading involves complex conditions or logic that cannot be easily captured by a SOQL query.</li>
+        <li>You’re working with custom objects or non-SObject types (like custom classes).</li>
+    </ul>
+
+    <p><strong>Key Point:</strong> <code>QueryLocator</code> is ideal for Salesforce-native data operations, especially for large datasets. On the other hand, <code>Iterable&lt;T&gt;</code> is better for loading external or complex data, such as custom objects or logic-heavy operations.</p>
+
+    <h2>Database.Callouts</h2>
+    <p>If your Apex batch class involves making HTTP or REST callouts, you need to implement the <code>Database.Callout</code> marker interface. This interface enables asynchronous callouts to external systems, such as REST APIs or web services, during batch execution.</p>
+    <p>Salesforce imposes a governor limit on the number of HTTP callouts per transaction. Currently, you can make up to 100 callouts per transaction. However, it's crucial to manage these limits carefully when designing your batch process.</p>
+    <p><strong>Important:</strong> <code>@future</code> methods cannot be called from Batch Apex, even if the class implements the <code>Database.Callout</code> interface. Salesforce restricts nesting of asynchronous operations, meaning a Batch Apex job cannot trigger another asynchronous operation like a <code>@future</code> method.</p>
+    <p>Instead, you can use <code>Queueable Apex</code> to chain additional asynchronous operations after a batch job completes. Queueable Apex allows for more flexibility and can be used in conjunction with Batch Apex.</p>
+    <p><strong>Queueable Apex Limit:</strong> Each chunk can enqueue up to 50 Queueable jobs. The daily limit for an organization is 250,000 Queueable jobs, though this limit is across all transactions for the entire organization and not per individual transaction.</p>
+
+    <h2>Database.Stateful</h2>
+    <p>If you use <code>Database.Stateful</code> in the class definition, you can maintain state across transactions. This means instance member variables will retain their values between transactions, but static member variables will be reset between transactions.</p>
+
+    <section>
+        <h2>Handling Errors with BatchApexErrorEvent</h2>
+        <p>The <strong>BatchApexErrorEvent</strong> is not automatically created by Salesforce. It needs to be explicitly handled and published by the developer in the <strong>execute</strong> method of a batch job. This event captures information like error messages, stack traces, and job IDs, which can be valuable for debugging or tracking issues in batch job execution.</p>
+
+        <h3>Publishing the BatchApexErrorEvent</h3>
+        <p>If an error occurs in the <strong>execute</strong> method, you can catch the error and publish the <strong>BatchApexErrorEvent</strong>. This ensures that the error is recorded, and other systems can act on it.</p>
+
+        <pre>
+<code>
+public class MyBatchClass implements Database.Batchable<SObject>, Database.Stateful {
+    
+    public Database.QueryLocator start(Database.BatchableContext BC) {
+        // Fetch records for processing
+        return [SELECT Id, Name FROM Account];
+    }
+    
+    public void execute(Database.BatchableContext BC, List<SObject> scope) {
+        try {
+            // Business logic goes here
+            for(SObject record : scope) {
+                // Some logic that might throw an exception
+            }
+        } catch (Exception e) {
+            // Manually create and publish the BatchApexErrorEvent
+            BatchApexErrorEvent errorEvent = new BatchApexErrorEvent(
+                'Error processing chunk', e.getMessage(), BC.getJobId());
+            // You can use PlatformEvent.publish() to publish the event
+            Database.SaveResult result = EventBus.publish(errorEvent);
+            System.debug('Error Event Published: ' + result);
+        }
+    }
+
+    public void finish(Database.BatchableContext BC) {
+        // Final processing after batch execution
+    }
+}
+</code>
+        </pre>
+    </section>
+
+    <section>
+        <h2>Subscribing to BatchApexErrorEvent</h2>
+        <p>To capture and view the <strong>BatchApexErrorEvent</strong>, you need to subscribe to it. This can be done through:</p>
+        <ul>
+            <li><strong>Apex Triggers</strong>: An Apex trigger can be set up to listen to the event whenever it is published. This allows you to process the event, such as logging the error or notifying the administrator.</li>
+            <li><strong>Process Builder</strong> or <strong>Flow</strong>: These tools can be used to subscribe to the event and automate actions such as sending emails or updating custom error records when an error occurs.</li>
+        </ul>
+
+        <h3>Using an Apex Trigger to Subscribe</h3>
+        <p>Here’s an example of how to subscribe to the <strong>BatchApexErrorEvent</strong> using an Apex Trigger:</p>
+
+        <pre>
+<code>
+trigger BatchApexErrorEventTrigger on BatchApexErrorEvent (after insert) {
+    for (BatchApexErrorEvent errorEvent : Trigger.New) {
+        // Process the error event, e.g., log it or send an email
+        System.debug('Error Event Received: ' + errorEvent.Message);
+    }
+}
+</code>
+        </pre>
+
+        <h3>Using Flow</h3>
+        <p>You can also <strong>Flow</strong> to handle events. These tools allow you to automate workflows based on the events, such as notifying the team via email or logging the error into custom error objects.</p>
+    </section>
+
+    <section>
+        <h2>Key Points</h2>
+        <ul>
+            <li><strong>Explicit Error Handling</strong>: The <strong>BatchApexErrorEvent</strong> is not auto-generated by Salesforce, and you need to explicitly handle and publish the event within your batch code.</li>
+            <li><strong>Subscribing to Events</strong>: You can subscribe to the event(/event/BatchApexErrorEvent) using Apex Triggers, Process Builder, or Flow to process errors and automate actions.</li>
+            <li><strong>Effective Error Management</strong>: Proper error handling using the <strong>BatchApexErrorEvent</strong> ensures that you can track, log, and take action when something goes wrong in a batch job.</li>
+        </ul>
+    </section>
+
+    <h2>Conclusion</h2>
+    <p>Apex Batch is a powerful tool for processing large volumes of data asynchronously in Salesforce. Understanding the proper usage of <code>QueryLocator</code> vs <code>Iterable&lt;T&gt;</code>, handling callouts, and managing state across transactions can help you optimize your batch jobs for performance and efficiency.</p>
+</article>
+
+</body>
+</html>
