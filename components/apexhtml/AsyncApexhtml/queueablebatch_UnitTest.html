@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesforce Queueable Apex with Unit Testing</title>
+    
+</head>
+<body>
+    <article>           
+
+        <h2>End-to-End Example: Queueable Apex with Unit Testing</h2>
+
+        <h3>Scenario</h3>
+        <p>Imagine we want to update a custom field <code>Priority__c</code> for a list of accounts based on their annual revenue. The goal is to:</p>
+        <ul>
+            <li>Process the accounts in batches.</li>
+            <li>Log the results after updating each batch.</li>
+            <li>Allow chaining for further processing if needed.</li>
+        </ul>
+
+        <h3>Step 1: Create the Queueable Class</h3>
+        <pre><code>
+public class AccountPriorityUpdater implements System.Queueable {
+    private List&lt;Id&gt; accountIds;
+
+    // Constructor to accept account IDs
+    public AccountPriorityUpdater(List&lt;Id&gt; accountIds) {
+        this.accountIds = accountIds;
+    }
+
+    // Execute method
+    public void execute(QueueableContext context) {
+        // Fetch the accounts
+        List&lt;Account&gt; accountsToUpdate = [SELECT Id, AnnualRevenue FROM Account WHERE Id IN :accountIds];
+
+        // Update Priority__c field based on AnnualRevenue
+        for (Account acc : accountsToUpdate) {
+            acc.Priority__c = acc.AnnualRevenue &gt;= 1000000 ? 'High' : 'Normal';
+        }
+
+        // Perform the update
+        if (!accountsToUpdate.isEmpty()) {
+            update accountsToUpdate;
+        }
+
+        // Log the processed accounts
+        System.debug('Updated accounts: ' + accountsToUpdate);
+    }
+}
+        </code></pre>
+
+        <h3>Step 2: Enqueue the Job</h3>
+        <pre><code>
+// Fetch account IDs for processing
+List&lt;Id&gt; accountIds = [SELECT Id FROM Account LIMIT 100].Id;
+
+// Enqueue the job
+System.enqueueJob(new AccountPriorityUpdater(accountIds));
+        </code></pre>
+
+        <h3>Step 3: Unit Testing the Queueable Class</h3>
+
+        <h4>Key Points to Test</h4>
+        <ul>
+            <li>Verify that the <code>Priority__c</code> field is updated correctly.</li>
+            <li>Ensure that the job is enqueued properly.</li>
+            <li>Use <code>Test.getQueueableJobs()</code> to confirm the job is added to the queue.</li>
+        </ul>
+
+        <h4>Test Class</h4>
+        <pre><code>
+@IsTest
+private class AccountPriorityUpdaterTest {
+    @IsTest
+    static void testExecute() {
+        // Step 1: Create test data
+        List&lt;Account&gt; testAccounts = new List&lt;Account&gt;();
+        for (Integer i = 0; i &lt; 5; i++) {
+            testAccounts.add(new Account(Name = 'Test Account ' + i, AnnualRevenue = i * 1000000));
+        }
+        insert testAccounts;
+
+        // Step 2: Collect account IDs
+        List&lt;Id&gt; accountIds = new List&lt;Id&gt;();
+        for (Account acc : testAccounts) {
+            accountIds.add(acc.Id);
+        }
+
+        // Step 3: Enqueue the job
+        Test.startTest();
+        System.enqueueJob(new AccountPriorityUpdater(accountIds));
+        Test.stopTest();
+
+        // Step 4: Verify updates
+        List&lt;Account&gt; updatedAccounts = [SELECT Id, Priority__c FROM Account];
+        for (Account acc : updatedAccounts) {
+            System.assertEquals(acc.AnnualRevenue &gt;= 1000000 ? 'High' : 'Normal', acc.Priority__c);
+        }
+
+        // Step 5: Verify the job in the queue
+        System.assertEquals(1, Test.getQueueableJobs().size());
+    }
+}
+        </code></pre>
+
+        <h2>Conclusion</h2>
+        <p>Queueable Apex provides a powerful mechanism for handling asynchronous operations in Salesforce, offering greater flexibility than <code>@future</code> methods. By using constructors, chaining, and robust unit testing, developers can ensure that their asynchronous processes run efficiently and reliably.</p>
+    </article>
+</body>
+</html>
