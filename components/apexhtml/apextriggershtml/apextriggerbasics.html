@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Apex Triggers - Blog</title>
+    
+</head>
+<body>
+    <article>
+        <h1>Apex Triggers</h1>
+        <p>This blog covers several important aspects of Apex Triggers in Salesforce.</p>
+
+        <h2>Topics to be covered in this post:</h2>
+        <ul>
+            <li>Triggers and Order of Execution</li>
+            <li>Transaction Scope</li>
+            <li>Trigger Context Variables</li>
+            <li>Database DML - allornone = false</li>
+            <li>Static Variables and their impact</li>
+            <li>When to consider using Apex triggers over Flow triggers</li>
+            <li>Governor Limits for Triggers</li>
+            <li>Different use cases to consider for triggers</li>
+        </ul>
+
+        <h2>Apex Triggers</h2>
+        <p>Salesforce triggers are essential for automating business logic that cannot be achieved through declarative tools. Triggers execute Apex code before or after specific database events (e.g., insert, update, delete) and provide fine-grained control over data manipulation.</p>
+
+        <h2>Triggers and Order of Execution</h2>
+        <p>For detailed information on the trigger order of execution, refer to these resources:</p>
+        <ul>
+            <li><a href="https://architect.salesforce.com/view/MCOOL7W3TDDVFZZGSTXP7SLSI6NI">Order of Execution - Salesforce Architect</a></li>
+            <li><a href="https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_triggers_order_of_execution.htm">Official Salesforce Documentation on Order of Execution</a></li>
+        </ul>
+        <p><strong>Simplified Flow:</strong> The order is as follows:</p>
+        <ol>
+            <li>Before Flow Record Triggers</li>
+            <li>Before Apex Triggers</li>
+            <li>Data Persisted (Not committed)</li>
+            <li>After Apex Triggers</li>
+            <li>Assignment Rules</li>
+            <li>Auto-response Rules</li>
+            <li>After Workflows</li>
+            <li>Escalation Rules</li>
+            <li>Salesforce Flow Automations (Processes built with Process Builder or Flows launched by workflow rules. Note: Order not guaranteed)</li>
+            <li>After Flow Record Triggers</li>
+            <li>Entitlement Rules</li>
+            <li>Roll-up Summary</li>
+            <li>Criteria-Based Sharing Evaluation</li>
+            <li>Data Persisted --> Committed</li>
+            <li>Post-Commit Logic:
+                <ul>
+                    <li>Sending Email</li>
+                    <li>Enqueued Asynchronous Apex Jobs (Queueable jobs, Future methods)</li>
+                    <li>Asynchronous paths in record-triggered flows</li>
+                </ul>
+            </li>
+        </ol>
+
+        <h2>When to Consider Using Apex Triggers over Flow Triggers</h2>
+        <p>You should use Apex Triggers when you need to:</p>
+        <ul>
+            <li>Perform complex logic that is not easily achievable in Flow.</li>
+            <li>Handle bulk operations efficiently, ensuring the logic adheres to Salesforce’s governor limits.</li>
+            <li>Implement operations that require DML operations in a specific sequence or require fine-grained control.</li>
+            <li>Implement logic that interacts with external systems or performs batch processing.</li>
+            <li>Ensure better performance and avoid limitations like CPU time for large-scale operations.</li>
+        </ul>
+
+        <h2>Transaction Scope</h2>
+        <p>Apex Triggers are executed in the same transaction as the one that invoked them. The transaction scope is detailed in the "Triggers and Order of Execution" section.</p>
+        <p><strong>Important Points:</strong></p>
+        <ul>
+            <li>If the trigger is invoked as part of a bulk operation and there is an unhandled exception in one record, the entire transaction is rolled back.</li>
+            <li>Exception handling is required if you need to process other records.</li>
+            <li>You can use <code>Database.DML</code> operations with <code>allOrNone = false</code> to allow partial transaction success.</li>
+        </ul>
+
+        <h3>Apex Triggers Invoked from Bulk Updates or Apex Batch</h3>
+        <p>When an Apex Batch is processing 1K records, the following occurs:</p>
+        <ul>
+            <li>Each Apex Batch processes a separate transaction for each 1K record chunk.</li>
+            <li>If one chunk fails, the other chunks are still processed.</li>
+            <li>Apex Triggers are processed in chunks (200 records per chunk), and if an error occurs in one chunk, the other records in that chunk are rolled back. However, other chunks continue to process.</li>
+            <li>Summary: Apex Batch operates at the chunk level, while Apex Triggers operate at the transaction level. Use <code>Database.DML</code> with <code>allOrNone = false</code> to handle exceptions.</li>
+        </ul>
+
+        <h2>Trigger Context Variables</h2>
+        <ul>
+            <li><code>Trigger.isExecuting</code>: Returns whether the trigger is executing.</li>
+            <li><code>Trigger.operationType</code>: Possible values are: <code>BEFORE_INSERT, BEFORE_UPDATE, BEFORE_DELETE, AFTER_INSERT, AFTER_UPDATE, AFTER_DELETE, AFTER_UNDELETE</code></li>
+            <li><code>Trigger.size</code>: Total number of records in the trigger invocation (both old and new records).</li>
+            <li><code>Trigger.isInsert, Trigger.isUpdate, Trigger.isDelete, Trigger.isUndelete</code>: Boolean values indicating the type of operation being performed.</li>
+            <code>Trigger.new, Trigger.newMap, Trigger.old, Trigger.oldMap</code>: Holds the new and old record values.</li>
+
+        </ul>
+
+        <table>
+            <thead>
+                <tr>
+                    <th rowspan="2">Before / After</th>
+                    <th rowspan="2">Trigger Data Type</th>
+                    <th colspan="4" class="tableheader">Trigger Operation</th>
+                </tr>
+                <tr>
+                    <th>Insert</th>
+                    <th>Update</th>
+                    <th>Delete</th>
+                    <th>Undelete</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td rowspan="4">isBefore</td>
+                    <td>Trigger.new</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>Null</td>
+                    <td>N/A</td>
+                </tr>
+                <tr>
+                    <td>Trigger.newMap</td>
+                    <td>Null (Since Id is not present)</td>
+                    <td>Yes</td>
+                    <td>Null</td>
+                    <td>N/A</td>
+                </tr>
+                <tr>
+                    <td>Trigger.old</td>
+                    <td>Null (No data present before create)</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>N/A</td>
+                </tr>
+                <tr>
+                    <td>Trigger.oldMap</td>
+                    <td>Null (No data present before create)</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>N/A</td>
+                </tr>
+                <tr>
+                    <td rowspan="4">isAfter</td>
+                    <td>Trigger.new</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>Null</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>Trigger.newMap</td>
+                    <td>Yes (Id is assigned - here)</td>
+                    <td>Yes</td>
+                    <td>Null</td>
+                    <td>Yes</td>
+                </tr>
+                <tr>
+                    <td>Trigger.old</td>
+                    <td>Null (No data present before create)</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>Null</td>
+                </tr>
+                <tr>
+                    <td>Trigger.oldMap</td>
+                    <td>Null (No data present before create)</td>
+                    <td>Yes</td>
+                    <td>Yes</td>
+                    <td>Null</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Database DML - allornone = false</h2>
+        <p>Apex Triggers process records in chunks of 200. For example, if an Account Trigger is initiated for 1K records, Salesforce processes each chunk of 200 records individually. Using Database DML with allornone = false allows to continue with partial commit. Refer to Apex Trigger vs Batch Trigger Transaction for detailed scenario. </p>
+        <article>
+            <h2>Apex Trigger vs Batch Trigger Transaction</h2>
+            <p>Apex Batch and Apex Trigger serve different purposes in Salesforce, but understanding their transactional differences is essential for handling scenarios where large datasets are involved. This article explores how transactions differ between the two, with an example scenario to illustrate the key differences.</p>
+            
+            <h3>Scenario</h3>
+            <p>Consider an <strong>Apex Batch</strong> that processes 10,000 Account records with a batch size of 1,000. The batch is divided into 10 chunks, each processing 1,000 records. Assume there’s an <strong>Apex Trigger</strong> on the Account object that is invoked for each chunk. Here's how the process works:</p>
+            <ul>
+                <li><strong>Apex Batch:</strong> Each chunk processes 1,000 records as an independent transaction.</li>
+                <li><strong>Apex Trigger:</strong> The trigger processes the 1,000 records in smaller sub-transactions of 200 records each.</li>
+            </ul>
+    
+            <h3>Transactional Differences</h3>
+            <h3>Apex Batch</h3>
+            <ul>
+                <li>The batch is divided into chunks based on the specified <code>batchSize</code>.</li>
+                <li>Each chunk is processed as a separate transaction.</li>
+                <li>If an error occurs in one chunk, only that chunk is rolled back. Other chunks continue to process independently.</li>
+                <li>Failed chunks can be retried later, excluding specific records that caused errors.</li>
+            </ul>
+            <h3>Apex Trigger</h3>
+            <ul>
+                <li>Triggers operate within the transaction that invokes them.</li>
+                <li>For bulk DML operations, triggers process records in batches of 200 (or fewer) per transaction.</li>
+                <li>If an error occurs within a 200-record chunk, the trigger transaction for that chunk is rolled back. The system retries the chunk, excluding the failed records.</li>
+            </ul>
+    
+            <h3>Error Handling Example</h3>
+            <p>Let’s take a closer look at how error handling works in this scenario:</p>
+            <h3>Apex Batch</h3>
+            <ul>
+                <li><strong>Chunk 1 (Records 1–1,000):</strong> An error occurs (e.g., record 25 fails).</li>
+                <li>Chunk 1 transaction is rolled back, and no records from it are committed.</li>
+                <li>Other chunks (e.g., Chunk 2, Chunk 3) proceed unaffected because their transactions are independent.</li>
+                <li>Failed records (e.g., record 25) can be logged or retried later.</li>
+            </ul>
+            <h3>Apex Trigger</h3>
+            <ul>
+                <li><strong>Trigger Chunk (Records 1–200):</strong> An error occurs (e.g., record 25 fails).</li>
+                <li>The transaction for the 200 records is rolled back.</li>
+                <li>The trigger retries the chunk, excluding the failed record (record 25).</li>
+            </ul>
+    
+            <h3>Why Apex Batch Chunks Continue</h3>
+            <p>Apex Batch chunks continue processing even after an error due to their design:</p>
+            <ul>
+                <li><strong>Independent Transactions:</strong> Each chunk operates within its own transaction.</li>
+                <li><strong>Error Isolation:</strong> Problems in one chunk do not affect others, ensuring partial success.</li>
+                <li><strong>Retry Mechanism:</strong> Failed chunks can be retried later with custom logic.</li>
+            </ul>
+            
+            <h3>Benefits of This Design</h3>
+            <ul>
+                <li>Partial progress is preserved even if some chunks fail.</li>
+                <li>Debugging and error handling are easier due to isolated transactions.</li>
+                <li>Scalability is improved for large datasets.</li>
+            </ul>
+    
+            <h3>Conclusion</h3>
+            <p>The key difference between Apex Batch and Apex Trigger lies in how transactions are handled. Apex Batch processes each chunk independently, making it fault-tolerant and scalable. Apex Trigger processes records in smaller sub-transactions, with mechanisms to retry failed chunks while excluding problematic records. Understanding these differences can help you design robust, error-tolerant Salesforce solutions.</p>
+        </article>
+
+        <h2>Static Variables and Their Impact</h2>
+        <p>Static variables retain their values across the entire transaction. Be cautious, as Apex triggers can be re-evaluated if there is an update in workflow or apex triggers are reprocessed when Database DML with allornone = false is set.</p>
+        
+        <h2>Governor Limits</h2>
+        <p>Salesforce enforces governor limits for Apex, including in triggers. For every 200 records processed, governor limits are reset.</p>
+
+        <h2>Use Cases to Consider for Triggers</h2>
+        <p>Control triggers using metadata variables, so you can enable or disable them during specific operations (e.g., bulk updates).</p>
+
+        <h2>Miscellaneous Information</h2>
+        <p><strong>Merge Triggers:</strong> When merging records, both before and after delete triggers fire for the losing record and both before and after update triggers fire for the winning record. Child records are not affected.</p>
+        <p><strong>Undelete Trigger:</strong> The <code>after undelete</code> trigger runs only for top-level objects. Only a few standard objects and all custom objects are supported.</p>
+        <p><strong>Other Information:</strong></p>
+        <ul>
+            <li>Field history is recorded at the end of a trigger.</li>
+            <li>Field history tracking respects user permissions for field modifications.</li>
+            <li>Asynchronous callouts must be made from a trigger to avoid blocking the transaction.</li>
+            <li>Recurring events are not processed in bulk triggers.</li>
+        </ul>
+
+        <h2>References</h2>
+        <ul>
+            <li><a href="https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_triggers_merge_statements.htm">Triggers and Merge Statements</a></li>
+            <li><a href="https://developer.salesforce.com/docs/atlas.en-us.apexcode.meta/apexcode/apex_triggers_recovered_records.htm">Triggers and Recovered Records</a></li>
+        </ul>
+
+        <h2>Learning Resources</h2>
+        <ul>
+            <li><a href="https://www.youtube.com/watch?v=pjxJ2oR4ZNs&list=PLh7tdKngVYIvg8LZ7zytGf9l3sUsohjS7">Salesforce Exclusive YouTube Channel</a></li>
+        </ul>
+    </article>
+</body>
+</html>

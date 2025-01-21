@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct DML Operations in Apex Triggers</title>
+    
+    </style>
+</head>
+<body>
+    <article>
+        <h2>Topics to be covered in this post that causes Apex Trigger Recursion:</h2>
+        <ul>
+            <li>Direct DML Operations in Apex Triggers</li>
+            <li>Indirect DML Operations Between Triggers</li>
+            <li>Apex Trigger Recursion with Field Updates via Workflow Rules</li>
+            <li>Flow Updates</li>           
+        </ul>
+    </article>
+    <article>
+        <h2>Recursion: Direct DML Operations in Apex Triggers</h2>
+        <p>
+            In Salesforce Apex, **Direct DML Operations in Triggers** require a proper understanding of how the platform handles transactions, especially in the context of the `before` and `after` trigger events. The interaction between triggers and DML operations can lead to errors or even recursion if not handled with care. This blog post discusses common practices and scenarios related to direct DML operations in triggers.
+        </p>
+
+        <h3>What Happens in the After Trigger Context?</h3>
+        <p>
+            When working with the <code>after</code> trigger context, it's important to note that you cannot update the record that initiated the trigger. The record is already committed to the database and locked, preventing further updates during the same transaction. Attempting to update the record will result in an error like:
+        </p>
+        <pre>
+            System.DmlException: Update is not allowed on the record that triggered this event.
+        </pre>
+
+        <h3>Can You Create a New Instance of the Record?</h3>
+        <p>
+            While direct updates to the initiating record are not allowed, it is possible to create a **new instance of the same record** and perform a DML operation on that new instance. Here's an example of creating a new instance and updating it:
+        </p>
+        <pre>
+            // In an After Trigger:
+            Account acc = new Account(Id = Trigger.new[0].Id, Name = 'Updated Name');
+            update acc; // This is valid and will not cause the same transaction error.
+        </pre>
+        <p>
+            This approach is **valid** because the original record is locked, but the new instance is treated as a separate record, and Salesforce allows you to perform DML operations on it.
+        </p>
+
+        <h3>Can This Cause Recursion?</h3>
+        <p>
+            Yes, creating a new instance and performing DML operations can **cause recursion**. This happens if the DML operation triggers another execution of the same trigger, creating a loop. Recursion can occur if the operation on the newly created record causes another related record to trigger its own trigger.
+        </p>
+        <p>
+            For example, if the <code>after</code> trigger updates a related record, this could trigger another execution of the same trigger, potentially leading to a cycle of repeated executions.
+        </p>
+
+        
+        <h3>Summary</h3>       
+        <ul>
+            <li>You cannot update the record that initiated the trigger in the <code>after</code> trigger context due to Salesforce's record locking mechanism.</li>
+            <li>You can create a new instance of the record and perform DML operations on it, but you must be cautious of recursion.</li>
+            
+        </ul>
+
+    </article>
+
+    <article>
+        <h2>Recursion: Indirect DML Operations Between Triggers</h2>
+        <p>In Salesforce, <strong>recursion</strong> can occur in a trigger when one operation on a record triggers another operation that fires the same trigger again, potentially leading to a cycle of repeated trigger executions. Recursion can happen not only directly (e.g., a trigger updates the same record it is handling) but also indirectly, involving related records. Below is a detailed explanation of how <strong>indirect DML operations between triggers</strong> can cause recursion.</p>
+
+        <h3>Scenario: Account Trigger Updates Contact, and Contact Trigger Updates Account</h3>
+        <p>Let’s consider the following scenario involving two triggers:</p>
+        <ol>
+            <li><strong>Account Trigger</strong>: The trigger on the Account object is set up to perform a DML operation on a related Contact record when certain conditions are met. For example, the Account trigger might update a <code>Contact</code> record when the <code>Account</code> is updated.</li>
+            <li><strong>Contact Trigger</strong>: When the <code>Contact</code> record is updated as part of the Account trigger's operation, it fires the <code>Contact</code> trigger, which may then update the related <code>Account</code> record.</li>
+        </ol>
+        <p>This leads to an indirect chain of operations, where one trigger fires the next, potentially leading to recursion if not managed properly.</p>
+
+        <h3>Detailed Breakdown of the Scenario:</h3>
+        <p>1. <strong>Step 1: Account Trigger Fires</strong></p>
+        <ul>
+            <li>An update is made to an Account record. This could be due to a user action, a process builder, or another trigger.</li>
+            <li>The <strong>Account trigger</strong> is set to fire upon this update.</li>
+            <li>Inside the Account trigger, a DML operation (e.g., update) is performed on the related <code>Contact</code> record, based on the changes made to the <code>Account</code>.</li>
+        </ul>
+        
+        <p>2. <strong>Step 2: Contact Trigger Fires</strong></p>
+        <ul>
+            <li>The DML operation on the <code>Contact</code> record causes the <strong>Contact trigger</strong> to fire.</li>
+            <li>The Contact trigger performs some operations on the <code>Contact</code> record, but, in this case, let’s assume it also updates the related <code>Account</code> record (e.g., updates the <code>Account</code> based on changes in the <code>Contact</code>).</li>
+        </ul>
+        
+        <p>3. <strong>Step 3: Account Trigger Fires Again</strong></p>
+        <ul>
+            <li>The DML operation on the <code>Account</code> record in the Contact trigger causes the <strong>Account trigger</strong> to fire again.</li>
+            <li>This creates a loop where:
+                <ul>
+                    <li>The Account trigger updates the Contact.</li>
+                    <li>The Contact trigger updates the Account.</li>
+                    <li>The Account trigger fires again, continuing the cycle.</li>
+                </ul>
+            </li>
+        </ul>
+        
+        <p>This cycle continues as long as the triggers keep updating each other. If there are no safeguards in place, this can result in an <strong>infinite loop</strong> or recursion, where the triggers keep firing back and forth without termination.</p>
+
+        <h3>Recursion and Its Consequences:</h3>
+        <ul>
+            <li><strong>Excessive Resource Usage</strong>: Recursion leads to excessive processing time and resource consumption. Since Salesforce has governor limits (such as the number of DML operations, CPU time, and SOQL queries), a recursive loop can quickly hit these limits, causing the transaction to fail with a governor limit exception.</li>
+            <li><strong>Data Integrity Issues</strong>: When recursion is not controlled, it can lead to data inconsistencies. The triggers may end up trying to update the same records repeatedly, which could result in erroneous data being saved or missed business logic.</li>
+            <li><strong>Apex Heap Size and Limits</strong>: Salesforce imposes a maximum heap size, and recursion can cause this limit to be exceeded, causing the transaction to fail.</li>
+        </ul>
+        <h3>Summary</h3>
+        <p>Indirect DML operations between triggers can easily lead to recursion if the triggers on related objects continuously update each other. </p>
+    </article>
+
+    <article>
+        <h2>Recursion: Field Updates via Workflow Rules</h2>
+        <p>A common scenario where Apex trigger recursion can occur is when a trigger updates a record that subsequently causes a workflow rule to fire, which then updates the same record, re-triggering the original trigger. This happens when a trigger performs a DML operation that indirectly triggers field updates through workflow rules, and those updates re-fire the trigger, causing recursion.</p>
+        
+        <h3>Scenario: Account Trigger Updates Account Record, Triggering a Workflow Rule</h3>
+        <p>Let’s break down a scenario where this can happen:</p>
+        <ol>
+            <li><strong>Account Trigger</strong>: The trigger on the Account object performs a DML operation, such as updating an Account record based on certain criteria.</li>
+            <li><strong>Workflow Rule</strong>: The workflow rule is set up to automatically update the <code>Industry</code> field on the same Account record when the record is modified.</li>
+        </ol>
+        <p>This creates a chain reaction where:</p>
+        <ol>
+            <li>The Account trigger performs an update on the Account.</li>
+            <li>This update triggers a <strong>workflow rule</strong> which updates the <code>Industry</code> field of the same Account record.</li>
+            <li>The workflow field update leads to another <strong>Account trigger</strong> firing, as the record is considered updated.</li>
+        </ol>
+
+        <h3>Detailed Breakdown of the Scenario:</h3>
+        <p>1. <strong>Step 1: Account Trigger Fires</strong></p>
+        <ul>
+            <li>A user or system action triggers an update to the <code>Account</code> record (e.g., updating the Account’s <code>Name</code> field).</li>
+            <li>The <strong>Account trigger</strong> runs in response to this update. For example, the trigger may perform some business logic or update related records.</li>
+        </ul>
+
+        <p>2. <strong>Step 2: Workflow Rule Fires</strong></p>
+        <ul>
+            <li>The DML operation inside the Account trigger (updating the Account record) causes a <strong>workflow rule</strong> to be evaluated.</li>
+            <li>If the conditions of the workflow rule are met, the rule updates the <code>Industry</code> field on the Account record.</li>
+        </ul>
+
+        <p>3. <strong>Step 3: Account Trigger Fires Again</strong></p>
+        <ul>
+            <li>The workflow field update causes the <strong>Account trigger</strong> to fire again, since the Account record was modified (via the workflow rule).</li>
+            <li>This cycle continues as the Account trigger updates the record, triggering the workflow, which then updates the field, firing the trigger again.</li>
+        </ul>
+
+        <h3>Result: Trigger Recursion</h3>
+        <p>Since the workflow rule updates the same record that the trigger is processing, it causes the trigger to fire again, potentially leading to an infinite recursion cycle. The recursion will continue until the governor limits are reached, or until the trigger is stopped by implementing a mechanism to prevent further executions (e.g., using static variables).</p>
+
+        <h3>Why Does Recursion Occur?</h3>
+        <p>Recursion happens because the workflow rule’s field update directly or indirectly triggers the original trigger again. In Salesforce, DML operations, including field updates via workflow, are considered "modifications" to the records, which in turn can re-trigger the same trigger.</p>
+
+       
+        
+
+        <h3>Conclusion</h3>
+        <p>Recursion caused by workflow field updates is a common issue in Salesforce development. When a trigger updates a record, and that update causes a workflow rule to fire and update the same record, it can lead to an endless cycle of trigger executions. As Salesforce transitions to using flows instead of workflows, the chances of such recursion issues will diminish, and developers will have more control over the automation process.</p>
+    </article>
+
+    <article>
+        <h2>Recursion: Flow Updates</h2>
+      
+        <section>
+          <h3>Scenario 1: Account Trigger Updates Contact, Followed by Account Record Triggered After Flow Update</h3>
+          <p>
+            <strong>Flow of Execution:</strong>
+            <ul>
+              <li><strong>Account Trigger Fires:</strong> The <em>Account Trigger</em> runs when an <em>Account</em> record is inserted or updated. In the trigger, related <em>Contact</em> records are updated based on the Account data.</li>
+              <li><strong>After Flow Updates Account Industry:</strong> After the trigger completes, an <em>After Flow</em> updates the <em>Account Industry</em> field based on specific logic.</li>
+              <li><strong>Recursion Occurs:</strong> The update to the Account Industry field by the flow re-triggers the <em>Account Trigger</em>, causing the recursion.</li>
+            </ul>
+          </p>
+          <p>
+            <strong>Why Recursion Happens:</strong>
+            <ul>
+              <li>The flow indirectly updates the <em>Account Industry</em>, causing the trigger to fire again, as the trigger is watching for changes to the <em>Account</em> record.</li>
+            </ul>
+          </p>
+          
+        </section>
+      
+        <section>
+          <h3>Scenario 2: Account Trigger Updates a Child Record, Followed by Flow Update to the Same Child Record</h3>
+          <p>
+            <strong>Flow of Execution:</strong>
+            <ul>
+              <li><strong>Account Trigger Fires:</strong> When an <em>Account</em> record is updated, the <em>Account Trigger</em> updates a related <em>Child record</em> (e.g., <em>Case</em> or <em>Opportunity</em>).</li>
+              <li><strong>After Flow Updates the Child Record:</strong> An <em>After Flow</em> triggers and updates the same <em>Child record</em>, based on some business logic.</li>
+              <li><strong>Recursion Occurs:</strong> The update to the <em>Child record</em> by the flow might cause the <em>Account Trigger</em> to fire again, leading to recursion.</li>
+            </ul>
+          </p>
+          <p>
+            <strong>Why Recursion Happens:</strong>
+            <ul>
+              <li>The <em>Account Trigger</em> triggers updates to the <em>Child record</em>, which in turn triggers the <em>After Flow</em>. The flow may update the same record, causing the trigger to fire again and leading to recursive behavior.</li>
+            </ul>
+          </p>
+          
+        </section>
+      
+      </article>
+
+</body>
+</html>

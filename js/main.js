@@ -78,3 +78,13 @@ function loadContent(file) {
         mainContent.innerHTML = `<p style="color: red;">${error.message}</p>`;
       });
   }
+
+
+  const accordions = document.querySelectorAll('.accordion');
+  accordions.forEach(accordion => {
+      accordion.addEventListener('click', function() {
+          this.classList.toggle('active');
+          const content = this.nextElementSibling;
+          content.classList.toggle('active');
+      });
+  });
