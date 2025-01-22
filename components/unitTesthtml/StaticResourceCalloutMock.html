@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StaticResourceCalloutMock vs HttpCalloutMock</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <article>
+        <header>
+            <h1>StaticResourceCalloutMock vs HttpCalloutMock</h1>
+        </header>
+        <section>
+            <h2>Introduction</h2>
+            <p>
+                Testing HTTP callouts in Salesforce often involves mocking responses to ensure your code works correctly. Salesforce provides two main approaches: <code>StaticResourceCalloutMock</code> and <code>HttpCalloutMock</code>. This blog explains their differences with a complex example.
+            </p>
+        </section>
+        <section>
+            <h2>Scenario</h2>
+            <p>
+                Assume you need to test an HTTP callout that fetches orders and their associated items. The JSON response is complex and nested, as shown below:
+            </p>
+            <pre class="code-block">
+{
+  "status": "success",
+  "orders": [
+    {
+      "orderId": "O1001",
+      "customerName": "John Doe",
+      "items": [
+        { "itemId": "I101", "itemName": "Laptop", "quantity": 1, "price": 1200 },
+        { "itemId": "I102", "itemName": "Mouse", "quantity": 2, "price": 25 }
+      ]
+    },
+    {
+      "orderId": "O1002",
+      "customerName": "Jane Smith",
+      "items": [
+        { "itemId": "I103", "itemName": "Keyboard", "quantity": 1, "price": 80 }
+      ]
+    }
+  ]
+}
+            </pre>
+        </section>
+        <section>
+            <h2>Using StaticResourceCalloutMock</h2>
+            <p>
+                With <code>StaticResourceCalloutMock</code>, you store the JSON response as a static resource. Here’s the test class:
+            </p>
+            <pre class="code-block">
+@isTest
+public class OrderServiceTest {
+    @isTest
+    static void testFetchOrdersWithMockResource() {
+        StaticResourceCalloutMock mock = new StaticResourceCalloutMock();
+        mock.setStaticResource('MockOrdersResponse');
+        mock.setStatusCode(200);
+        mock.setHeader('Content-Type', 'application/json');
+
+        Test.setMock(HttpCalloutMock.class, mock);
+
+        Test.startTest();
+        List<OrderService.OrderWrapper> result = OrderService.fetchOrders();
+        Test.stopTest();
+
+        System.assertNotNull(result);
+        System.assertEquals(2, result.size());
+    }
+}
+            </pre>
+            <p>
+                This approach avoids inline JSON construction and custom mock implementations, making the test class concise and maintainable.
+            </p>
+        </section>
+        <section>
+            <h2>Using HttpCalloutMock</h2>
+            <p>
+                Without <code>StaticResourceCalloutMock</code>, you must construct the JSON and implement a custom mock. Here’s the equivalent test class:
+            </p>
+            <pre class="code-block">
+@isTest
+public class OrderServiceTestWithoutStaticResource {
+    @isTest
+    static void testFetchOrdersWithManualMock() {
+        String mockJson = '{"status": "success", "orders": [
+            {"orderId": "O1001", "customerName": "John Doe", "items": [
+                {"itemId": "I101", "itemName": "Laptop", "quantity": 1, "price": 1200},
+                {"itemId": "I102", "itemName": "Mouse", "quantity": 2, "price": 25}
+            ]},
+            {"orderId": "O1002", "customerName": "Jane Smith", "items": [
+                {"itemId": "I103", "itemName": "Keyboard", "quantity": 1, "price": 80}
+            ]}
+        ]}';
+
+        HttpCalloutMock mock = new HttpCalloutMock() {
+            public HttpResponse respond(HttpRequest req) {
+                HttpResponse res = new HttpResponse();
+                res.setStatusCode(200);
+                res.setHeader('Content-Type', 'application/json');
+                res.setBody(mockJson);
+                return res;
+            }
+        };
+
+        Test.setMock(HttpCalloutMock.class, mock);
+
+        Test.startTest();
+        List<OrderService.OrderWrapper> result = OrderService.fetchOrders();
+        Test.stopTest();
+
+        System.assertNotNull(result);
+        System.assertEquals(2, result.size());
+    }
+}
+            </pre>
+            <p>
+                This approach involves additional boilerplate code for inline JSON strings and custom mock implementations.
+            </p>
+        </section>
+        <section>
+            <h2>Comparison</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>StaticResourceCalloutMock</th>
+                        <th>HttpCalloutMock</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>JSON Handling</td>
+                        <td>Stored in a static resource</td>
+                        <td>Manually constructed in test</td>
+                    </tr>
+                    <tr>
+                        <td>Mock Implementation</td>
+                        <td>Minimal setup</td>
+                        <td>Custom mock with respond() method</td>
+                    </tr>
+                    <tr>
+                        <td>Code Complexity</td>
+                        <td>Low</td>
+                        <td>High</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+        <section>
+            <h2>Conclusion</h2>
+            <p>
+                <code>StaticResourceCalloutMock</code> significantly reduces boilerplate code, enhances readability, and ensures maintainability. It is especially beneficial for complex responses, making it a preferred choice for testing HTTP callouts in Salesforce.
+            </p>
+        </section>
+    </article>
+</body>
+</html>

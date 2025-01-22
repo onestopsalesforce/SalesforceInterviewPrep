@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Mocking with StaticResourceCalloutMock</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <article>
+        <header>
+            <h1>Dynamic Mocking with StaticResourceCalloutMock</h1>
+        </header>
+        <section>
+            <h2>Introduction</h2>
+            <p>
+                Testing HTTP callouts in Salesforce can be streamlined by leveraging <code>StaticResourceCalloutMock</code> in combination with custom metadata to dynamically manage and configure mock responses. This blog provides a complete end-to-end setup for such a solution.
+            </p>
+        </section>
+        <section>
+            <h2>Steps to Implement</h2>
+            <p>
+                Follow these steps to create a dynamic and scalable solution for mocking HTTP callouts in your Salesforce org.
+            </p>
+            <h3>1. Create Custom Metadata</h3>
+            <p>
+                Set up a custom metadata type called <strong>MockDataConfig</strong> with the following fields:
+            </p>
+            <ul>
+                <li><strong>Endpoint__c</strong> (Text): The HTTP endpoint, e.g., <code>/services/apexrest/orders</code>.</li>
+                <li><strong>MockResponse__c</strong> (Text Area): The name of the static resource containing the mock JSON.</li>
+                <li><strong>StatusCode__c</strong> (Number): The HTTP status code, e.g., <code>200</code>.</li>
+                <li><strong>ContentType__c</strong> (Text): The content type, e.g., <code>application/json</code>.</li>
+            </ul>
+            <p>Populate this metadata with configurations for your endpoints.</p>
+
+            <h3>2. Create a Utility Class</h3>
+            <p>
+                This utility class fetches mock data from the custom metadata and sets up the <code>StaticResourceCalloutMock</code>. It also ensures a failure if the configuration is missing.
+            </p>
+            <pre class="code-block">
+public class MockDataUtility {
+    public static void setupMock(String endpoint) {
+        // Query custom metadata for the given endpoint
+        MockDataConfig__mdt mockConfig = [
+            SELECT MockResponse__c, StatusCode__c, ContentType__c
+            FROM MockDataConfig__mdt
+            WHERE Endpoint__c = :endpoint
+            LIMIT 1
+        ];
+
+        if (mockConfig != null) {
+            // Dynamically create a StaticResource for the mock
+            StaticResourceCalloutMock mock = new StaticResourceCalloutMock();
+            mock.setStaticResource(mockConfig.MockResponse__c);
+            mock.setStatusCode(mockConfig.StatusCode__c);
+            mock.setHeader('Content-Type', mockConfig.ContentType__c);
+
+            // Register the mock
+            Test.setMock(HttpCalloutMock.class, mock);
+        } else {
+            // Fail the test if no configuration is found
+            System.assert(false, 'No mock configuration found for endpoint: ' + endpoint);
+        }
+    }
+}
+            </pre>
+
+            <h3>3. Test Class Implementation</h3>
+            <p>
+                Use the utility class in your test methods to dynamically set up mocks based on the endpoint. A missing configuration will cause the test to fail.
+            </p>
+            <pre class="code-block">
+@isTest
+public class OrderServiceTest {
+    @isTest
+    static void testFetchOrders() {
+        // Setup mock for the specific endpoint
+        MockDataUtility.setupMock('/services/apexrest/orders');
+
+        Test.startTest();
+        List<OrderService.OrderWrapper> result = OrderService.fetchOrders();
+        Test.stopTest();
+
+        System.assertNotNull(result);
+        System.assertEquals(2, result.size()); // Example assertion
+    }
+
+    @isTest
+    static void testMissingMockConfiguration() {
+        try {
+            // Attempt to setup mock for an endpoint without configuration
+            MockDataUtility.setupMock('/services/apexrest/unknownEndpoint');
+            System.assert(false, 'Test should have failed due to missing configuration.');
+        } catch (AssertException e) {
+            System.assert(e.getMessage().contains('No mock configuration found'));
+        }
+    }
+}
+            </pre>
+
+            <h3>4. Populate Static Resources</h3>
+            <p>
+                Create a static resource (e.g., <strong>MockOrdersResponse</strong>) containing the following JSON data:
+            </p>
+            <pre class="code-block">
+{
+  "status": "success",
+  "orders": [
+    {
+      "orderId": "O1001",
+      "customerName": "John Doe",
+      "items": [
+        { "itemId": "I101", "itemName": "Laptop", "quantity": 1, "price": 1200 },
+        { "itemId": "I102", "itemName": "Mouse", "quantity": 2, "price": 25 }
+      ]
+    },
+    {
+      "orderId": "O1002",
+      "customerName": "Jane Smith",
+      "items": [
+        { "itemId": "I103", "itemName": "Keyboard", "quantity": 1, "price": 80 }
+      ]
+    }
+  ]
+}
+            </pre>
+        </section>
+        <section>
+            <h2>Benefits of This Approach</h2>
+            <ul>
+                <li><strong>Reduced Boilerplate:</strong> No need to manually construct JSON or write custom mock implementations.</li>
+                <li><strong>Centralized Management:</strong> All mock configurations are stored in custom metadata, making updates easier.</li>
+                <li><strong>Reusability:</strong> The utility class and metadata can be reused across test classes.</li>
+                <li><strong>Scalability:</strong> Adding a new mock is as simple as creating a new metadata record.</li>
+                <li><strong>Ensured Test Coverage:</strong> Tests fail gracefully if a configuration is missing, preventing overlooked scenarios.</li>
+            </ul>
+        </section>
+        <section>
+            <h2>Conclusion</h2>
+            <p>
+                By combining <code>StaticResourceCalloutMock</code> with custom metadata, you can significantly simplify your test setup while improving maintainability and scalability. This approach is ideal for managing complex responses and ensuring consistency across test cases. The added failure mechanism ensures thorough test coverage and avoids overlooked configurations.
+            </p>
+        </section>
+    </article>
+</body>
+</html>
