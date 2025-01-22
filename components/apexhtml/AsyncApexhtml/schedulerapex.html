@@ -104,47 +104,8 @@ private class SchedulerTest {
 
         <p>With this comprehensive understanding, you’ll be well-prepared for both practical implementations and interview discussions on Scheduler Apex in Salesforce.</p>
     
-        <table border="1" cellpadding="10" cellspacing="0">
-            <thead>
-                <tr>
-                    <th>Scenario</th>
-                    <th>Allowed?</th>
-                    <th>Notes</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>@future → Apex Batch</td>
-                    <td>No ❌</td>
-                    <td>Asynchronous chaining is restricted.</td>
-                </tr>
-                <tr>
-                    <td>@future → Queueable Apex</td>
-                    <td>Yes ✅</td>
-                    <td>Supported; Queueable Apex provides better control over asynchronous processes.</td>
-                </tr>
-                <tr>
-                    <td>Apex Batch → @future</td>
-                    <td>No ❌</td>
-                    <td>Asynchronous methods like @future cannot be invoked from a batch.</td>
-                </tr>
-                <tr>
-                    <td>Queueable Apex → @future</td>
-                    <td>No ❌</td>
-                    <td>Asynchronous methods like @future cannot be invoked from a Queueable job.</td>
-                </tr>
-                <tr>
-                    <td>Queueable Apex → Apex Batch</td>
-                    <td>Yes ✅</td>
-                    <td>Queueable can invoke batch jobs.</td>
-                </tr>
-                <tr>
-                    <td>Apex Batch → Queueable Apex</td>
-                    <td>Yes ✅</td>
-                    <td>Batch Apex can enqueue Queueable jobs.</td>
-                </tr>
-            </tbody>
-        </table>
+       
+          
         
     
     </article>

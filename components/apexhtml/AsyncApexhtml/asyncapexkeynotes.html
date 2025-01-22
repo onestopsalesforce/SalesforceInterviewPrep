@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Learn about Salesforce Scheduler Apex, including implementation, approaches, CRON expressions, and key objects like CronJobDetail and CronTrigger.">
+    <title>Scheduler Apex in Salesforce</title>
+    
+</head>
+<body>
+    <article>
+        <h1>Asynchronous  Apex - Important Points</h1>
+        
+        <h2>@future invocation rules</h2>        
+    
+        <table border="1" >
+            <thead>
+              <tr >
+                <th>Scenario</th>
+                <th>Allowed?</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>@future → Apex Batch</td>
+                <td>❌ No</td>
+                <td>Asynchronous chaining is restricted.</td>
+              </tr>
+              <tr>
+                <td>@future → Queueable Apex</td>
+                <td>✅ Yes</td>
+                <td>Supported; Queueable Apex provides better control over asynchronous processes.</td>
+              </tr>
+              <tr>
+                <td>Apex Batch → @future</td>
+                <td>❌ No</td>
+                <td>Asynchronous methods like @future cannot be invoked from a batch.</td>
+              </tr>
+              <tr>
+                <td>Queueable Apex → @future</td>
+                <td>❌ No</td>
+                <td>Asynchronous methods like @future cannot be invoked from a Queueable job.</td>
+              </tr>
+              <tr>
+                <td>Queueable Apex → Apex Batch</td>
+                <td>✅ Yes</td>
+                <td>Queueable can invoke batch jobs.</td>
+              </tr>
+              <tr>
+                <td>Apex Batch → Queueable Apex</td>
+                <td>✅ Yes</td>
+                <td>Batch Apex can enqueue Queueable jobs.</td>
+              </tr>
+              <tr>
+                <td>REST API → @future</td>
+                <td>✅ Yes</td>
+                <td>@future methods can be invoked directly via a REST API request, with limits applying.</td>
+              </tr>
+            </tbody>
+          </table>
+          
+        
+    
+    </article>
+</body>
+</html>

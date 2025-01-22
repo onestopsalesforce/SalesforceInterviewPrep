@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Handling Concurrency Exceptions in Salesforce</title>
+    <link rel="stylesheet" href="style.css">
+    
+</head>
+<body>
+    <article>
+        <h1>How to Address Concurrency Exceptions in Salesforce</h1>
+
+        <p>Concurrency issues are common in Salesforce when dealing with asynchronous processes that attempt to access the same record or related records. Here's how to understand and address these issues effectively:</p>
+
+        <h2>Understanding Concurrency Issues</h2>
+        <ul>
+            <li>Processes may fail due to racing conditions for a resource.</li>
+            <li>When a record is locked using <code>FOR UPDATE</code>, other processes trying to update the same record (or related parent/child records) might encounter concurrency issues, resulting in exceptions.</li>
+        </ul>
+
+        <h2>Handling Concurrency Exceptions</h2>
+        <p>While some concurrency situations are unavoidable, you can mitigate their impact by implementing retry mechanisms. Here's how:</p>
+
+        <h3>1. Using a Retry Process with Retry Counter</h3>
+        <p>A retry process can help address locked records by attempting the operation again after a delay. This can be achieved using:</p>
+        <ul>
+            <li><strong>Scheduler Process:</strong> Use a scheduler to retry logic at predefined intervals.</li>
+            <li><strong>Queueable Batch with Delay:</strong> Queueable batches allow for delayed execution and can be used to retry failed operations.</li>
+        </ul>
+
+        <h3>2. Releasing Locks</h3>
+        <p>By retrying, the lock on the record may be released, allowing the logic to execute without manual intervention. This ensures smooth processing and reduces the risk of exceptions affecting downstream operations.</p>
+
+        <h2>Note</h2>
+        <p>Schedulers can invoke regular Apex classes, not just Apex batches or Queueable batches. This flexibility allows you to customize your retry logic based on specific requirements.</p>
+
+        <h2>Example Implementation</h2>
+        <pre>
+// Example of using Queueable with retry logic
+public class ConcurrencyRetryQueueable implements Queueable {
+    private Id recordId;
+    private Integer retryCount;
+
+    public ConcurrencyRetryQueueable(Id recordId, Integer retryCount) {
+        this.recordId = recordId;
+        this.retryCount = retryCount;
+    }
+
+    public void execute(QueueableContext context) {
+        
+        try {
+            // Your logic here
+            Account acc = [SELECT Id, Name FROM Account WHERE Id = :recordId FOR UPDATE];
+            acc.Name = 'Updated Name';
+            update acc;
+        } catch (System.DmlException e) {            
+            if (retryCount > 0) {
+                Integer delayInMinutes = 5;
+                System.enqueueJob(new ConcurrencyRetryQueueable(recordId, retryCount - 1), delayInMinutes);
+            } else {
+                System.debug('Max retry attempts reached.');
+            }
+        }
+    }
+}
+        </pre>
+
+        <p>This example demonstrates how to use a Queueable Apex class to retry operations on a locked record. Adjust the <code>retryCount</code> to control the number of retry attempts.</p>
+
+        <h2>Conclusion</h2>
+        <p>By leveraging Salesforce features such as schedulers and Queueable batches, you can handle concurrency exceptions effectively. Implementing retry mechanisms ensures that your processes remain robust and resilient, even in the face of record locks or racing conditions.</p>
+
+        
+    </article>
+</body>
+</html>
