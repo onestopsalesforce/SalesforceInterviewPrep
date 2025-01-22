@@ -17,6 +17,7 @@
         <ul>
             <li>Processes may fail due to racing conditions for a resource.</li>
             <li>When a record is locked using <code>FOR UPDATE</code>, other processes trying to update the same record (or related parent/child records) might encounter concurrency issues, resulting in exceptions.</li>
+            <li>Note: If a record is locked using the <code>FOR UPDATE</code> keyword but is followed by a callout, the Salesforce framework will automatically release the lock on the record..</li>
         </ul>
 
         <h2>Handling Concurrency Exceptions</h2>

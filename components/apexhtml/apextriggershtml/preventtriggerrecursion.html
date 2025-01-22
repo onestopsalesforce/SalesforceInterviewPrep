@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventing Salesforce Apex Trigger Recursion</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <article>
+        <header>
+            <h1>Preventing Salesforce Apex Trigger Recursion</h1>
+        </header>
+        <section>
+            <h2>Topics Covered</h2>
+            <ul>
+                <li>Key Points - Apex Triggers</li>
+                <li>Static Boolean Approach (Not an Ideal Solution)</li>
+                <li>Static ID Set Approach (Not an Ideal Solution)</li>
+                <li>Custom Object Approach</li>
+                <li>References</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Key Points - Apex Triggers</h2>
+            <ul>
+                <li>Salesforce processes triggers in chunks of 200 records.</li>
+                <li>If there are 1,000 records to process, the Salesforce framework splits them into 5 chunks.</li>
+                <li>All chunks are processed under a single transaction. If an exception occurs, all chunks are rolled back.</li>
+                <li><strong>DML Exceptions</strong>: Using <code>allOrNone = false</code> allows triggers to process records even if some have exceptions.</li>
+                <li>Apex Triggers retry processing for successful records within a chunk, excluding failed records, with a maximum of 3 retries.</li>
+                <li>In some cases, the same record may be processed multiple times due to recursion.</li>
+                <li>Note: <code>Trigger.old</code> contains the data at the time the trigger was initially invoked. It does not reflect updates made by workflows or flows during the process.</li>
+            </ul>
+        </section>
+
+        <section>
+            <h2>Static Boolean Approach (Not an Ideal Solution)</h2>
+            <p>This approach involves declaring a static Boolean variable and using it to control trigger execution.</p>
+            <ol>
+                <li>Declare a static Boolean variable with a default value of <code>false</code>.</li>
+                <li>If the value is <code>false</code>, set it to <code>true</code> and process the trigger. If <code>true</code>, skip processing.</li>
+            </ol>
+            <pre><code class="language-apex">public class TriggerHandler {
+    private static Boolean isTriggerExecuted = false;
+
+    public static void handleTrigger(List&lt;Account&gt; accounts) {
+        if (isTriggerExecuted) {
+            return;
+        }
+        isTriggerExecuted = true;
+
+        // Your trigger logic here
+
+       
+    }
+}</code></pre>
+            <h3>Why This Solution Is Not Ideal</h3>
+            <ul>
+                <li><strong>Issue #1: More Than 200 Records</strong><br>
+                    When processing large batches (e.g., 1,000 records in 5 chunks), the static Boolean variable is set to <code>true</code> after the first chunk, preventing subsequent chunks from being processed.
+                </li>
+                <li><strong>Issue #2: DML with <code>allOrNone = false</code></strong><br>
+                    If an exception occurs during processing, successful records are retried. However, since the Boolean variable is already set to <code>true</code>, the retry logic skips processing.
+                </li>
+            </ul>
+            <p><strong>Note:</strong> If this approach is unavoidable, such as during record inserts, ensure the Boolean variable is reset to <code>false</code> at the end of the trigger to allow subsequent chunks to process.</p>
+        </section>
+
+        <section>
+            <h2>Static ID Set Approach</h2>
+            <p>This approach involves using a static Set to track processed record IDs.</p>
+            <ol>
+                <li>Create a static Set variable.</li>
+                <li>Add record IDs to the Set when processing them.</li>
+            </ol>
+            <pre><code class="language-apex">public class TriggerHandlerWithIdSet {
+    private static Set&lt;Id&gt; processedRecordIds = new Set&lt;Id&gt;();
+
+    public static void handleTrigger(List&lt;Account&gt; accounts) {
+        for (Account acc : accounts) {
+            if (processedRecordIds.contains(acc.Id)) {
+                continue;
+            }
+            processedRecordIds.add(acc.Id);
+
+            // Your trigger logic here
+        }
+    }
+}</code></pre>
+            <h3>Advantages and Limitations</h3>
+            <ul>
+                <li><strong>Resolves Issue #1:</strong> Unlike the Boolean approach, this method can handle large batches as each record is tracked individually.</li>
+                <li><strong>Does Not Resolve Issue #2:</strong> If DML with <code>allOrNone = false</code> encounters exceptions, successful records are retried. However, their IDs are already in the Set, causing them to be skipped.</li>
+            </ul>
+            <p><strong>Example:</strong> When processing 100 records, if 98 succeed and 2 fail, the 98 records are added to the Set. Upon retry, those 98 records are skipped, leaving them unprocessed.</p>
+        </section>
+
+        <section>
+            <h2>Other Alternative Approaches</h2>
+            <ul>
+                <li>Compare <code>Trigger.old</code> with <code>Trigger.new</code> data. If no changes meet your criteria, skip processing.</li>
+                <li>Use a custom object to track record processing. Update the tracker object after successful processing.</li>
+            </ul>
+            <pre><code class="language-apex">public class TriggerHandlerWithCustomObject {
+    public static void handleTrigger(List&lt;Account&gt; accounts) {
+        List&lt;Custom_Tracker__c&gt; trackers = [SELECT Record_Id__c FROM Custom_Tracker__c WHERE Record_Id__c IN :accounts];
+        Set&lt;Id&gt; processedIds = new Set&lt;Id&gt;();
+        for (Custom_Tracker__c tracker : trackers) {
+            processedIds.add(tracker.Record_Id__c);
+        }
+
+        for (Account acc : accounts) {
+            if (processedIds.contains(acc.Id)) {
+                continue;
+            }
+
+            // Your trigger logic here
+
+            // Create a tracker entry after processing
+            Custom_Tracker__c newTracker = new Custom_Tracker__c(Record_Id__c = acc.Id);
+            insert newTracker;
+        }
+    }
+}</code></pre>
+            <p><strong>Note:</strong> Choose an approach based on the specific business use case, ensuring it works for all possible data combinations. Always perform unit tests with bulk data.</p>
+        </section>
+
+        <section>
+            <h2>References</h2>
+            <ul>
+                <li><a href="https://www.youtube.com/watch?v=JFLN0Edew-E&list=PLT1UCxNkyjsTwAwFhPkYVH1taZNUCmqHW" target="_blank" rel="noopener noreferrer">Deep Dive into Apex Best Practices - Official Salesforce Developer</a></li>
+                <li><a href="https://cropredysfdc.com/2017/12/16/triggers-workflow-recursion-control-callouts-allornone/" target="_blank" rel="noopener noreferrer">Trigger Recursion Prevention Demo</a></li>
+            </ul>
+        </section>
+    </article>
+</body>
+</html>
