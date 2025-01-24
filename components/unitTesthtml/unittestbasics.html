@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Test Fundamentals</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <article>
+        <header>
+            <h1>Unit Test Fundamentals</h1>
+        </header>
+
+        <h2>Topics to be covered in this post:</h2>
+        <ul>
+            <li>Test.Assert Methods</li>
+            <li>@TestVisbile , Test.isRunningTest</li>
+            <li>Test Suites</li>
+            <li>Test Data Set Up</li>   
+            <li>Reference/Learning Materials</li>             
+        </ul>
+
+        <section>
+            
+            <h2>Assert Related Methods</h2>
+            <p>
+                The Test.Assert class in Salesforce is designed to validate the correctness of code by comparing expected and actual outcomes in test methods. It ensures that the application logic behaves as intended during automated testing
+            </p>
+
+            <table border="1" cellspacing="0" cellpadding="5">
+                <thead>
+                  <tr>
+                    <th>Assert Description</th>
+                    <th>Methods - Positive</th>
+                    <th>Methods - Negative</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Equal / Not Equal</td>
+                    <td>
+                      areEqual(expected, actual)<br>
+                      areEqual(expected, actual, msg)
+                    </td>
+                    <td>
+                      areNotEqual(expected, actual)<br>
+                      areNotEqual(expected, actual, msg)
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Fail</td>
+                    <td>
+                      fail()<br>
+                      isFalse(condition, msg)
+                    </td>
+                    <td></td>
+                  </tr>
+                  <tr>
+                    <td>True / False</td>
+                    <td>
+                      isTrue(condition)<br>
+                      isTrue(condition, msg)
+                    </td>
+                    <td>
+                      isFalse(condition)<br>
+                      isFalse(condition, msg)
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Instance of Type / Is Not Instance of Type</td>
+                    <td>
+                      isInstanceOfType(instance, expectedType)<br>
+                      isInstanceOfType(instance, expectedType, msg)
+                    </td>
+                    <td>
+                      isNotInstanceOfType(instance, expectedType)<br>
+                      isNotInstanceOfType(instance, expectedType, msg)
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>Null / Not Null</td>
+                    <td>
+                      isNull(value)<br>
+                      isNull(value, msg)
+                    </td>
+                    <td>
+                      isNotNull(value)<br>
+                      isNotNull(value, msg)
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+              
+        </section>
+
+        <section>
+            
+            <h2>@TestVisbile , Test.isRunningTest</h2>
+
+            <h3>@TestVisible</h3>
+            <ul>
+                <li>The @TestVisible annotation in Salesforce is required when you need to expose private or protected class variables, methods, or properties to test classes for unit testing purposes</li>
+                <li>By default, private members are not accessible in test classes, but using @TestVisible allows test methods to verify and validate their behavior</li>
+                <li>In many cases, private variables or methods are indirectly tested when the public methods that use them are tested</li>  
+                <li>If a private variable or method's behavior needs to be validated in isolation, beyond the scope of public method testing. For instance, if the internal state affects multiple methods, and you want to ensure it behaves as expected under different scenarios.</li>  
+                <li>@TestVisible is helpful but should only be used sparingly and thoughtfully, as exposing private details unnecessarily can reduce encapsulation and introduce maintainability risks</li>            
+            </ul>    
+            
+            <h3>Test.isRunningTest</h3>
+            <ul>
+                <li>Test.isRunningTest is a static method in Salesforce that returns a Boolean value indicating whether the current code is being executed within the context of a test method</li>
+                <li>It is useful for conditionally executing code or logic that should only run during testing, allowing for more controlled and isolated test scenarios</li>
+                <li>For example, you might use Test.isRunningTest to bypass certain logic or to set up specific test data when running unit tests, ensuring that your tests are reliable and focused on the intended functionality</li>
+                <li>Use Sparingly: Overusing Test.isRunningTest can lead to tightly coupled test and production code, reducing flexibility and maintainability</li>
+                <li>Mock Where Possible: Prefer using dependency injection or mock frameworks (e.g., HttpCalloutMock) instead of adding Test.isRunningTest directly in production logic.</li>
+            </ul>
+              
+        </section>
+
+        <section>
+            <h2>Test Suites in Salesforce</h2>
+            <p>
+              A Test Suite in Salesforce is a collection of test classes and test methods grouped together to be executed as a single unit. 
+              Test Suites are particularly useful for organizing tests by functionality, feature, or project scope and make it easier to run targeted test sets.
+            </p>
+            
+            <h3>Benefits of Using Test Suites</h3>
+            <ul>
+              <li><strong>Organized Testing:</strong> Group tests by feature, team, or sprint.</li>
+              <li><strong>Focused Runs:</strong> Run only the relevant tests instead of the entire test class set.</li>
+              <li><strong>Efficiency:</strong> Reduces time spent managing and running individual test classes.</li>
+            </ul>
+          
+            <h3>How to Create a Test Suite in Developer Console</h3>
+            <ol>
+              <li>Open the <strong>Developer Console</strong>.</li>
+              <li>Navigate to <strong>Test</strong> → <strong>New Suite</strong>.</li>
+              <li>Select the test classes that need to be included in the Test Suite.</li>
+              <li>Save the suite and run it as needed.</li>
+            </ol>
+          </section>
+
+          <section>
+            <h2>Reference/Learning Materials</h2>
+            <ul>
+                <li><a href="https://www.youtube.com/watch?v=Bam41ncmr2o&t=857s" target="_blank" rel="noopener noreferrer">Salesforce Apex Hours: Deep Drive in Test Classes | Apex Replay Debugger</a></li>   
+                <li><a href="https://www.youtube.com/watch?v=Xx_Cl9W0Lwo&t=2407s" target="_blank" rel="noopener noreferrer">Salesforce Developers codeLive: Writing Effective Apex Tests</a></li>             
+            </ul>
+        </section>
+          
+       
+    </article>
+</body>
+</html>

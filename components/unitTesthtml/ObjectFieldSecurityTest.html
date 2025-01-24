@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unit Testing in Salesforce: Sharing Rules, Assignment Rules, and FLS</title>
+   
+</head>
+<body>
+    <article>
+        <h1>Unit Testing in Salesforce: Sharing Rules, Assignment Rules, and FLS</h1>
+
+        <h2>Unit Testing Sharing Rules</h2>
+        <p>Sharing Rules define access permissions for records based on criteria or ownership. To unit test sharing rules effectively, ensure that the rules work as expected by dynamically assigning record access.</p>
+
+        <h3>Example Test for Sharing Rules</h3>
+        <p>The following example demonstrates how to test sharing rules by creating a user with no access to a record, updating the record to meet the sharing rule criteria, and validating that access has been granted:</p>
+
+        <pre><code class="language-apex">
+@isTest
+static void testSharingRulesWithCriteria() {
+    // Step 1: Create a user with limited access
+    Profile limitedProfile = [SELECT Id FROM Profile WHERE Name = 'Standard User' LIMIT 1];
+    User limitedUser = new User(
+        Username = 'limiteduser@test.com',
+        Email = 'limiteduser@test.com',
+        LastName = 'Limited',
+        Alias = 'limited',
+        TimeZoneSidKey = 'America/Los_Angeles',
+        LocaleSidKey = 'en_US',
+        EmailEncodingKey = 'UTF-8',
+        ProfileId = limitedProfile.Id,
+        LanguageLocaleKey = 'en_US'
+    );
+    insert limitedUser;
+
+    // Step 2: Create a record that doesn't initially meet the sharing rule criteria
+    Account privateAccount = new Account(Name = 'Private Account', Industry = 'Other');
+    insert privateAccount;
+
+    // Verify the user initially has no access
+    System.runAs(limitedUser) {
+        List<Account> accounts = [SELECT Id FROM Account WHERE Id = :privateAccount.Id];
+        System.assertEquals(0, accounts.size(), 'User should not have access to the account initially.');
+    }
+
+    // Step 3: Update the record to meet the sharing rule criteria
+    privateAccount.Industry = 'Technology'; // Assuming the sharing rule is based on Industry = 'Technology'
+    update privateAccount;
+
+    // Step 4: Verify the user now has access
+    System.runAs(limitedUser) {
+        List<Account> accounts = [SELECT Id FROM Account WHERE Id = :privateAccount.Id];
+        System.assertEquals(1, accounts.size(), 'User should have access to the account after sharing rule is applied.');
+    }
+}
+        </code></pre>
+
+        <h2>Unit Testing Assignment Rules</h2>
+        <p>Assignment Rules automatically assign records to users or queues based on predefined criteria. Testing assignment rules involves inserting a record and validating its owner after the rule is triggered.</p>
+
+        <h3>Example Test for Assignment Rules</h3>
+        <pre><code class="language-apex">
+@isTest
+static void testAssignmentRules() {
+    // Create a Lead to trigger assignment rules
+    Lead testLead = new Lead(LastName = 'Test', Company = 'Test Company');
+    Database.DMLOptions dmlOpts = new Database.DMLOptions();
+    dmlOpts.assignmentRuleHeader.useDefaultRule = true;
+    testLead.setOptions(dmlOpts);
+    insert testLead;
+
+    // Query the lead and validate assignment
+    Lead assignedLead = [SELECT OwnerId FROM Lead WHERE Id = :testLead.Id];
+    System.assertNotEquals(UserInfo.getUserId(), assignedLead.OwnerId, 'Lead should be assigned to a different owner based on the assignment rule.');
+}
+        </code></pre>
+
+        <h2>Unit Testing Field-Level Security</h2>
+        <p>Field-Level Security (FLS) ensures that sensitive fields are accessible only to authorized users. Unit tests should verify that the system enforces FLS rules correctly.</p>
+
+        <h3>Example Test for Field-Level Security</h3>
+        <pre><code class="language-apex">
+@isTest
+static void testFieldLevelSecurity() {
+    // Check if a sensitive field is accessible
+    Boolean isFieldAccessible = Schema.sObjectType.Account.fields.SomeSensitiveField__c.isAccessible();
+
+    // Assert that the field is accessible (positive case)
+    System.assert(isFieldAccessible, 'FLS check is working correctly. Sensitive field is accessible.');
+
+    // Assert that the field is not accessible (negative case)
+    // Use runAs if needed to simulate a user with restricted permissions
+    System.runAs(new User(Id = UserInfo.getUserId())) {
+        Boolean isFieldNotAccessible = !Schema.sObjectType.Account.fields.SomeSensitiveField__c.isAccessible();
+        System.assert(isFieldNotAccessible, 'FLS check is working correctly. Sensitive field is not accessible.');
+    }
+}
+        </code></pre>
+
+    </article>
+</body>
+</html>
