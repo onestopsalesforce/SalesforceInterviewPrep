@@ -15,7 +15,16 @@ export function loadHTML(filePath, elementId, callback = null) {
 
 // Initialize navigation behavior
 function initializeNavigation() {
-    // Expand/Collapse child navigation items
+    // Expand all navigation items by default
+    document.querySelectorAll('.nav-item').forEach(item => {
+        item.classList.add('expanded');
+        const childItems = item.querySelector('.child-items');
+        if (childItems) {
+            childItems.classList.remove('hidden');
+        }
+    });
+
+    // Expand/Collapse child navigation items on click
     document.querySelectorAll('.nav-item > a[data-target]').forEach(anchor => {
         anchor.addEventListener('click', event => {
             event.preventDefault();
@@ -43,13 +52,6 @@ function initializeNavigation() {
             });
 
             loadContent(contentId);
-
-            // Show the selected content section
-            /*
-            const contentToShow = document.getElementById(contentId);
-            if (contentToShow) {
-                contentToShow.classList.remove('hidden');
-            } */
         });
     });
 }
@@ -59,7 +61,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loadHTML('components/sidebar.html', 'sidebar', initializeNavigation); // Pass initializeNavigation as a callback
     loadHTML('components/content.html', 'content');
 });
-
 
 function loadContent(file) {
     fetch(file)
@@ -77,14 +78,13 @@ function loadContent(file) {
         console.log('error loading file...');
         mainContent.innerHTML = `<p style="color: red;">${error.message}</p>`;
       });
-  }
+}
 
-
-  const accordions = document.querySelectorAll('.accordion');
-  accordions.forEach(accordion => {
-      accordion.addEventListener('click', function() {
-          this.classList.toggle('active');
-          const content = this.nextElementSibling;
-          content.classList.toggle('active');
-      });
-  });
+const accordions = document.querySelectorAll('.accordion');
+accordions.forEach(accordion => {
+    accordion.addEventListener('click', function() {
+        this.classList.toggle('active');
+        const content = this.nextElementSibling;
+        content.classList.toggle('active');
+    });
+});

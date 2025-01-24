@@ -173,3 +173,10 @@ table tr:hover td {
   margin-right: 10px;
 }
 
+.green-box {
+    background-color: green;
+    color: white; /* Ensure text is visible against green background */
+    padding: 3px; /* Add some space around the text */
+    border-radius: 5px; /* Optional: Rounded corners */
+  }
+

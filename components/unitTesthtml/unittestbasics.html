@@ -14,7 +14,8 @@
 
         <h2>Topics to be covered in this post:</h2>
         <ul>
-            <li>Test.Assert Methods</li>
+            <li>Test Assert Methods</li>
+            <li>Test.startTest() and Test.stopTest()</li>
             <li>@TestVisbile , Test.isRunningTest</li>
             <li>Test Suites</li>
             <li>Test Data Set Up</li>   
@@ -25,74 +26,132 @@
             
             <h2>Assert Related Methods</h2>
             <p>
-                The Test.Assert class in Salesforce is designed to validate the correctness of code by comparing expected and actual outcomes in test methods. It ensures that the application logic behaves as intended during automated testing
+                The below methods are used in Salesforce Apex unit tests to validate conditions, ensuring that expected outcomes are met by asserting equality, boolean values, instance types, and null checks, with options to specify custom messages and handle both positive and negative test cases
             </p>
 
-            <table border="1" cellspacing="0" cellpadding="5">
+            <table border="1">
                 <thead>
                   <tr>
-                    <th>Assert Description</th>
+                    <th rowspan="2">Assert Description</th>
+                    <th colspan="2">Assert Class</th>
+                    <th colspan="2">System</th>
+                  </tr>
+                  <tr>
+                    <th>Methods - Positive</th>
+                    <th>Methods - Negative</th>
                     <th>Methods - Positive</th>
                     <th>Methods - Negative</th>
                   </tr>
                 </thead>
                 <tbody>
                   <tr>
-                    <td>Equal / Not Equal</td>
-                    <td>
-                      areEqual(expected, actual)<br>
-                      areEqual(expected, actual, msg)
-                    </td>
-                    <td>
-                      areNotEqual(expected, actual)<br>
-                      areNotEqual(expected, actual, msg)
-                    </td>
+                    <td><strong>Equal / Not Equal</strong></td>
+                    <td>Assert.areEqual(expected, actual)<br>Assert.areEqual(expected, actual, msg)</td>
+                    <td>Assert.areNotEqual(expected, actual)<br>Assert.areNotEqual(expected, actual, msg)</td>
+                    <td>System.assertEquals(expected, actual)<br>System.assertEquals(expected, actual, msg)</td>
+                    <td>System.assertNotEquals(expected, actual)<br>System.assertNotEquals(expected, actual, msg)</td>
                   </tr>
                   <tr>
-                    <td>Fail</td>
-                    <td>
-                      fail()<br>
-                      isFalse(condition, msg)
-                    </td>
+                    <td><strong>Fail</strong></td>
+                    <td>Assert.fail()</td>
+                    <td></td>
+                    <td></td>
                     <td></td>
                   </tr>
                   <tr>
-                    <td>True / False</td>
-                    <td>
-                      isTrue(condition)<br>
-                      isTrue(condition, msg)
-                    </td>
-                    <td>
-                      isFalse(condition)<br>
-                      isFalse(condition, msg)
-                    </td>
+                    <td><strong>True / False</strong></td>
+                    <td>Assert.isTrue(condition)<br>Assert.isTrue(condition, msg)</td>
+                    <td>Assert.isFalse(condition)<br>Assert.isFalse(condition, msg)</td>
+                    <td>System.assert(condition)</td>
+                    <td>System.assert(!condition)</td>
                   </tr>
                   <tr>
-                    <td>Instance of Type / Is Not Instance of Type</td>
-                    <td>
-                      isInstanceOfType(instance, expectedType)<br>
-                      isInstanceOfType(instance, expectedType, msg)
-                    </td>
-                    <td>
-                      isNotInstanceOfType(instance, expectedType)<br>
-                      isNotInstanceOfType(instance, expectedType, msg)
-                    </td>
+                    <td><strong>Instance of Type / Not Instance of Type</strong></td>
+                    <td>Assert.isInstanceOfType(instance, expectedType)<br>Assert.isInstanceOfType(instance, expectedType, msg)</td>
+                    <td>Assert.isNotInstanceOfType(instance, expectedType)<br>Assert.isNotInstanceOfType(instance, expectedType, msg)</td>
+                    <td></td>
+                    <td></td>
                   </tr>
                   <tr>
-                    <td>Null / Not Null</td>
-                    <td>
-                      isNull(value)<br>
-                      isNull(value, msg)
-                    </td>
-                    <td>
-                      isNotNull(value)<br>
-                      isNotNull(value, msg)
-                    </td>
+                    <td><strong>Null / Not Null</strong></td>
+                    <td>Assert.isNull(value)<br>Assert.isNull(value, msg)</td>
+                    <td>Assert.isNotNull(value)<br>Assert.isNotNull(value, msg)</td>
+                    <td>System.assertNotNull(object)<br>System.assertNotNull(object, msg)</td>
+                    <td>System.assertNull(object)<br>System.assertNull(object, msg)</td>
                   </tr>
                 </tbody>
-              </table>
-              
+              </table> 
         </section>
+
+        
+            
+        <section>
+            <h2>`Test.startTest()` and `Test.stopTest()` with Asynchronous Execution</h2>
+            <ul>
+                <li><strong>Purpose:</strong> 
+                    <ul>
+                        <li><strong>Test.startTest()</strong>: Marks the start of a test context, resetting governor limits to allow more resource consumption during the test.</li>
+                        <li><strong>Test.stopTest()</strong>: Marks the end of the test context, where asynchronous operations are executed immediately.</li>
+                    </ul>
+                </li>
+                
+                <li><strong>Governor Limits:</strong>
+                    <ul>
+                        <li>Governor limits are <strong>reset</strong> during `Test.startTest()` to allow more flexibility in resource-heavy operations.</li>
+                        <li>After `Test.stopTest()`, the limits are restored to their original values.</li>
+                        <li><strong class="green-box">Note:</strong> @testSetup methods do not count against the governor limits for test execution, but they must still adhere to the org-wide limits, such as the 10,000 records limit</li>
+                    </ul>
+                </li>
+                
+                <li><strong>Asynchronous Execution:</strong>
+                    <ul>
+                        <li><strong>Before `Test.startTest()`</strong>: Set up test data, such as inserting records or triggering asynchronous operations. Asynchronous operations like `@future` methods, batch jobs, and queueable jobs are <strong>queued</strong> but not executed yet.</li>
+                        <li><strong>Between `Test.startTest()` and `Test.stopTest()`</strong>: Asynchronous operations are <strong>queued</strong> but <strong>not executed</strong> until `Test.stopTest()` is called.</li>
+                        <li><strong>When `Test.stopTest()` is called</strong>: Any asynchronous operations (such as `@future` methods or batch jobs) that were queued during the test execution are <strong>executed immediately and synchronously</strong>.</li>
+                    </ul>
+                </li>
+                
+                <li><strong>When Asynchronous Processes Kick In:</strong>
+                    <p>Asynchronous operations like `@future` methods, batch jobs, and queueable methods are triggered during the test execution, but they do not run until <strong>Test.stopTest()</strong> is called. At the moment of `Test.stopTest()`, these asynchronous jobs are executed synchronously within the test context, allowing the test to assert their results immediately.</p>
+                </li>
+    
+                <li><strong>Key Points:</strong>
+                    <ul>
+                        <li><strong>Resetting Governor Limits</strong>: `Test.startTest()` resets the governor limits, providing more resources for the test.</li>
+                        <li><strong>Immediate Execution Post `Test.stopTest()`</strong>: Asynchronous jobs like `@future` methods and batches are executed immediately after `Test.stopTest()`.</li>
+                        <li><strong>Validating Results</strong>: After `Test.stopTest()`, you can assert results of asynchronous operations within the same test method.</li>
+                    </ul>
+                </li>
+                
+                <li><strong>Example:</strong>
+                    <pre>
+                        <code>
+                            @isTest
+                            private class AsyncTestClass {
+                                @isTest static void testAsyncMethod() {
+                                    // Set up test data
+                                    Account acc = new Account(Name = 'Test Account');
+                                    insert acc;
+                                    
+                                    Test.startTest();  // Reset governor limits
+                                    
+                                    // Trigger an asynchronous operation (future method)
+                                    MyAsyncClass.myFutureMethod(acc.Id);
+                                    
+                                    Test.stopTest();  // Immediately execute the asynchronous operation
+                                    
+                                    // Assert the outcome of the asynchronous operation
+                                    Account updatedAcc = [SELECT Id, Status__c FROM Account WHERE Id = :acc.Id];
+                                    System.assertEquals('Processed', updatedAcc.Status__c);
+                                }
+                            }
+                        </code>
+                    </pre>
+                </li>
+            </ul>
+        </section>
+        
+        
 
         <section>
             
