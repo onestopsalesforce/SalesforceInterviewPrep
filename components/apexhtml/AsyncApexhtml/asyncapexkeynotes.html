@@ -9,9 +9,9 @@
 </head>
 <body>
     <article>
-        <h1>Asynchronous  Apex - Important Points</h1>
+        <h2>Asynchronous  Apex - Important Points</h2>
         
-        <h2>@future invocation rules</h2>        
+        <h3>Async Process Invocation Rules</h2>        
     
         <table border="1" >
             <thead>
@@ -39,7 +39,7 @@
               </tr>
               <tr>
                 <td>Queueable Apex → @future</td>
-                <td>❌ No</td>
+                <td>✅ Yes</td>
                 <td>Asynchronous methods like @future cannot be invoked from a Queueable job.</td>
               </tr>
               <tr>
@@ -59,9 +59,40 @@
               </tr>
             </tbody>
           </table>
-          
-        
     
     </article>
+
+    <article>
+      <h3>Apex Code Example: @future can Invoke Queueable Batch</h3>
+      <pre>
+        <code>
+          // Queueable Class
+          public class MyQueueableJob implements Queueable {
+            public void execute(QueueableContext context) {
+                System.debug('Executing Queueable job.');
+            }
+          }
+
+          // Future Class
+          public class MyFutureClass {
+            @future
+            public static void callQueueableFromFuture() {
+                System.debug('Inside @future method.');
+
+                // Enqueueing a Queueable job
+                System.enqueueJob(new MyQueueableJob());
+            }
+          }
+
+          // Test Execution
+          public class TestFutureQueueable {
+            public static void testFutureQueueableCall() {
+                // Call the @future method
+                MyFutureClass.callQueueableFromFuture();
+            }
+          }
+        </code>
+      </pre>
+  </article>
 </body>
 </html>

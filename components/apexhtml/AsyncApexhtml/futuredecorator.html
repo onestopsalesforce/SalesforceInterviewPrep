@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@future Annotation in Salesforce</title>
+
+</head>
+<body>
+
+    
+    <article >
+        <h2>@future Annotation: Asynchronous Operations</h1>
+        <p>The <code>@future</code> annotation in Salesforce enables to perform operations asynchronously, allowing resource-intensive or time-sensitive processes to execute outside the main transaction. While powerful, its use must be carefully considered to ensure efficient and reliable system behavior.</p>
+        <p><strong>Note:</strong> <code>@future</code> methods are enqueued but not processed until the transaction has been committed. If the transaction rolls back, corresponding <code>@future</code> method invocations are also rolled back.</p>
+
+        <h3>Key Considerations for Using @future</h3>
+        <ol>
+            <li><strong>Evaluate Synchronous Feasibility</strong>
+                <p>If the functionality completes quickly and does not approach the CPU time limit (10 seconds for synchronous transactions), it can often be handled synchronously without requiring asynchronous execution.</p>
+            </li>
+            <li><strong>Plan for Scalability</strong>
+                <p>If there is potential for the functionality to become more complex in the future—such as handling larger datasets or making multiple callouts—designing it as asynchronous from the outset can save future refactoring efforts and reduce technical debt.</p>
+            </li>
+            <li><strong>Avoid Critical Dependencies on @future Success</strong>
+                <p>Do not rely on <code>@future</code> for critical operations within a synchronous process. For example, if a synchronous method sends an email to a client stating, "Your order has been accepted," but the actual order creation is delegated to a <code>@future</code> method, this creates a risk. Since <code>@future</code> methods execute asynchronously and only after the transaction commits, there is no guarantee that the order creation will succeed, potentially leading to inconsistent user experiences.</p>
+            </li>
+            <li><strong>Mixed DML Scenarios</strong>
+                <p>Use <code>@future</code> for operations involving Mixed DML, such as performing DML on setup objects (e.g., <code>User</code>, <code>Group</code>) and non-setup objects (e.g., <code>Account</code>, <code>Opportunity</code>) in the same transaction. Salesforce enforces restrictions on such operations, which can be bypassed by processing them asynchronously.</p>
+            </li>
+            <li><strong>HTTP Callouts from Apex Triggers</strong>
+                <p>Asynchronous processing (via <code>@future</code>, Queueable, or other mechanisms) is required for performing HTTP callouts within Apex triggers. This ensures the callout occurs outside the transaction context, avoiding runtime governor limit violations.</p>
+            </li>
+        </ol>
+
+        <h3>Limitations of Future Methods</h3>
+        <ul>
+            <li><strong>Cannot Be Called From Certain Contexts:</strong> Future methods cannot be invoked from Batch Apex or Queueable Apex classes.</li>
+            <li><strong>Cannot Be Chained:</strong> A future method cannot call another future method.</li>
+            <li><strong>Cannot Invoke Batch Apex:</strong> Future methods cannot invoke Batch Apex classes. However, they can invoke Queueable Apex, which provides more flexibility.</li>
+        </ul>
+
+        <h3>Governor Limits</h3>
+        <ul>
+            <li><strong>Maximum Calls:</strong> Up to 50 future method invocations are allowed per transaction. Exceeding this limit throws a runtime exception.</li>
+            <li><strong>Execution Order:</strong> Execution of future methods depends on system availability and may not occur immediately during high system load.</li>
+        </ul>
+
+        <h3>Parameters That Can Be Passed</h3>
+        <ul>
+            <li><strong>Allowed:</strong>
+                <ul>
+                    <li>Primitive data types (e.g., <code>String</code>, <code>Integer</code>, <code>Boolean</code>, <code>Id</code>, etc.)</li>
+                    <li>Collections of primitives (e.g., <code>List</code>, <code>Set</code>, <code>Map</code>)</li>
+                </ul>
+            </li>
+            <li><strong>Not Allowed:</strong>
+                <ul>
+                    <li>Complex objects (e.g., SObject instances)</li>
+                    <li><code>Blob</code> data types, as they cannot be serialized</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h3>Additional Key Points</h3>
+        <ul>
+            <li><strong>Static Methods Only:</strong> Future methods must be static and belong to a class.</li>
+            <li><strong>No Return Values:</strong> Future methods do not return results to the caller due to their asynchronous nature.</li>
+            <li><strong>Error Handling:</strong> Errors are not propagated back to the calling transaction. Logging mechanisms or custom error handling is recommended.</li>
+        </ul>
+
+        <h3>Summary Table</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Feature</th>
+                    <th>@future Behavior</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Async Execution</td>
+                    <td>Executes in a separate thread</td>
+                </tr>
+                <tr>
+                    <td>Supports Callouts</td>
+                    <td>Requires <code>callout=true</code> in the annotation</td>
+                </tr>
+                <tr>
+                    <td>Limitations</td>
+                    <td>Cannot call Batch Apex, another future, etc.</td>
+                </tr>
+                <tr>
+                    <td>Governors</td>
+                    <td>Max 50 calls per transaction</td>
+                </tr>
+                <tr>
+                    <td>Best Use Cases</td>
+                    <td>Mixed DML, Callouts from triggers</td>
+                </tr>
+                <tr>
+                    <td>Parameter Restrictions</td>
+                    <td>Only primitives, lists/sets/maps of primitives</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h3>Conclusion</h3>
+        <p>The <code>@future</code> annotation is a valuable tool for handling asynchronous operations in Salesforce, but its usage must be judicious. Evaluate whether the operation truly requires asynchronous processing, ensure critical processes are handled synchronously when necessary, and leverage <code>@future</code> for scenarios like Mixed DML or callouts that mandate asynchronous execution. This careful consideration helps maintain system reliability, scalability, and a seamless user experience.</p>
+    </article>
+</body>
+</html>
