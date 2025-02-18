@@ -5,7 +5,7 @@
     <h2>Example Scenarios: Correct vs. Incorrect Rollback Handling</h2>
 
     <h3>Incorrect Approach (Data Loss Risk)</h3>
-    <pre>
+    <pre> <code class="code-block">
 Screen 1: Capture Account Details
 → Account Created (DML committed)
 Screen 2: Capture Contract Details
@@ -13,10 +13,10 @@ Screen 2: Capture Contract Details
 
 Since the Account was already committed in Screen 1, it cannot be rolled back, even if a Fault Path is added.
 This results in incomplete or orphaned data in Salesforce.
-    </pre>
+</code> </pre>
 
     <h3>Correct Approach (Rollback Enabled)</h3>
-    <pre>
+    <pre> <code class="code-block">
 Screen 1: Capture Account Details
 → Store in Variables (No DML Yet)
 Screen 2: Capture Contact Details
@@ -24,7 +24,7 @@ Screen 2: Capture Contact Details
 
 If Contact Creation Fails, Salesforce can rollback the entire transaction, including the Account.
 This prevents orphaned records and maintains data integrity.
-    </pre>
+ </code>   </pre>
 
     <h2>Best Practices for Rollback Handling</h2>
     <ol>
@@ -49,10 +49,10 @@ This prevents orphaned records and maintains data integrity.
 
     <h3>Rollback Sequence</h3>
     <p>The rollback happens in reverse order, meaning that the actions at the end of the flow (such as updates or deletes) are undone first. For example:</p>
-    <pre>
+    <pre> <code class="code-block">
 If a flow updates records, creates new records, and then deletes records,
 the delete operations are rolled back first, followed by the record creation and updates.
-    </pre>
+</code></pre>
 
     <h2>References</h2>
     <p><a href="https://www.linkedin.com/pulse/order-matters-mastering-flow-rollback-element-screen-flows-werner-vrsse/">Stuart Werner - Mastering Flow Rollback Element in Screen Flows</a></p>
