@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Approval Process in Flows - Quick Refresher</title>
+  <style>
+    body {
+      background-color: #121212;
+      color: #e0e0e0;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+    }
+    article {
+      max-width: 800px;
+      margin: 20px;
+      padding: 20px;
+    }
+    h1, h2, h3 {
+      color: #ff5722;
+    }
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+    h2 {
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+    h3 {
+      font-size: 1.5rem;
+      margin-bottom: 5px;
+    }
+    ul {
+      list-style-type: disc;
+      margin-left: 20px;
+    }
+    li {
+      margin-bottom: 8px;
+    }
+    code {
+      background-color: #1e1e1e;
+      color: #ffcc00;
+      padding: 2px 4px;
+      font-size: 1rem;
+      border-radius: 3px;
+    }
+  </style>
+</head>
+<body>
+  <article>
+    <h1>Approval Process in Flows - Quick Refresher</h1>
+    <p>This guide serves as a refresher for experienced developers preparing for interviews. It covers key aspects of the approval process in Salesforce Flows.</p>
+    
+    <h2>Approval Process Components</h2>
+    
+    <h3>Entry Criteria</h3>
+    <ul>
+      <li>Defines the conditions under which a record enters the approval process.</li>
+    </ul>
+    
+    <h3>Approver Field</h3>
+    <ul>
+      <li><strong>Selection #1 - Approver Field:</strong>
+        <ul>
+          <li>None</li>
+          <li>Manager</li>
+          <li>Hierarchical Relationship</li>
+          <li>If left blank, cannot be changed unless an existing Custom Hierarchical Relationship is present.</li>
+        </ul>
+      </li>
+      <li><strong>Selection #2 - Use Approver Field of Lead Owner:</strong>
+        <ul>
+          <li>Determines whether the criteria should be based on the Record Owner rather than the submitted user.</li>
+        </ul>
+      </li>
+      <li><strong>Selection #3 - Record can be updated by:</strong>
+        <ul>
+          <li>Administrator only</li>
+          <li>Administrator and Approver</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h3>Approval Assignment Template (Optional)</h3>
+    <ul>
+      <li>Predefined template for assigning approvals.</li>
+    </ul>
+
+    <h3>Approval Screen</h3>
+    <ul>
+      <li><strong>Approver - Record Fields that can be viewed</strong></li>
+      <li><strong>Display Approval History</strong></li>
+      <li><strong>Availability:</strong>
+        <ul>
+          <li>Only on Salesforce Application</li>
+          <li>Mobile Device too</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h2>Initial Submitter</h2>
+    <ul>
+      <li>Defines who can submit records for approval:
+        <ul>
+          <li>Creator</li>
+          <li>Owner</li>
+          <li>Public Groups</li>
+          <li>Role</li>
+          <li>Role and Internal Sub-Ordinates</li>
+          <li>User</li>
+        </ul>
+      </li>
+      <li>Determines whether the submitted user can recall the approval request.</li>
+    </ul>
+
+    <h2>Approval Process Setup</h2>
+    <ul>
+      <li><strong>Initial Submission Actions</strong></li>
+      <li><strong>Approval Steps</strong></li>
+      <li><strong>Final Approval Actions</strong></li>
+      <li><strong>Final Rejection Actions</strong></li>
+      <li><strong>Recall Actions</strong></li>
+    </ul>
+
+    <h2>Approval Situations</h2>
+    <ul>
+      <li><strong>Auto Approval</strong> - Approval is granted automatically if conditions are met.</li>
+      <li><strong>Delegation Approval</strong> - Approval delegated to another user.</li>
+      <li><strong>One Level Approval:</strong>
+        <ul>
+          <li>Single Member Approval</li>
+          <li>Multi-Member - Unanimous approval required</li>
+          <li>Multi-Member - Any member of the group can approve</li>
+        </ul>
+      </li>
+      <li><strong>Multi-Level Approval:</strong>
+        <ul>
+          <li>Manager Approval required only if certain conditions are met.</li>
+          <li>Manager and Senior Manager Approval required.</li>
+          <li>Manager approval not required, but Senior Manager approval required.</li>
+        </ul>
+      </li>
+    </ul>
+
+    <h2>Additional Considerations</h2>
+    <ul>
+      <li><strong>Rejection Handling:</strong>
+        <ul>
+          <li>Define whether a rejected record can be resubmitted.</li>
+          <li>Set up notifications for rejections.</li>
+        </ul>
+      </li>
+      <li><strong>Escalation Rules:</strong> Approvals can be escalated if no action is taken within a specified timeframe.</li>
+      <li><strong>Parallel Approvals:</strong> Multiple approvers can review a request simultaneously.</li>
+      <li><strong>Notifications:</strong> Email alerts and in-app notifications for approvals and rejections.</li>
+    </ul>
+
+    <p>This guide ensures that all key elements of the approval process are covered, but let me know if you need further additions!</p>
+  </article>
+</body>
+</html>
