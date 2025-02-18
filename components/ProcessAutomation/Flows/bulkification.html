@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Salesforce Flow Bulkification</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <article>
+        <h1>Understanding Salesforce Flow Bulkification</h1>
+        <p>Salesforce automatically bulkifies Flow transactions to optimize processing and stay within platform limits. However, the efficiency depends on the type of Flow and how it's executed.</p>
+        
+        <h2>1. What is Flow Bulkification?</h2>
+        <p>✔️ Bulkification ensures that multiple records are processed in a single transaction, reducing SOQL queries and DML operations.</p>
+        
+        <h2>2. How Different Flow Types Handle Bulkification</h2>
+        
+        <h3>A. Record-Triggered Flows</h3>
+        <ul>
+            <li>✔️ Processes records in batches (up to 200 at a time).</li>
+            <li>✔️ Avoids hitting SOQL and DML limits.</li>
+            <li>⚡ Requires careful handling of loops and collections.</li>
+        </ul>
+        
+        <h3>B. Scheduled Flows</h3>
+        <ul>
+            <li>✔️ Runs in bulk like Batch Apex.</li>
+            <li>✔️ Processes records efficiently at a scheduled time.</li>
+        </ul>
+        
+        <h3>C. Autolaunched Flows</h3>
+        <ul>
+            <li>✔️ Called by Apex or Process Builder.</li>
+            <li>⚡ Needs explicit bulk handling when triggered via Apex.</li>
+        </ul>
+        
+        <h3>D. Screen Flows</h3>
+        <ul>
+            <li>❌ Processes one record at a time.</li>
+            <li>❌ Not inherently bulkified.</li>
+        </ul>
+        
+        <h2>3. Common Mistakes That Break Bulkification</h2>
+        <ul>
+            <li>❌ Placing DML statements inside loops.</li>
+            <li>❌ Querying records multiple times inside a loop.</li>
+            <li>❌ Not using collection variables.</li>
+        </ul>
+        
+        <h2>4. Best Practices for Bulkified Flows</h2>
+        <ul>
+            <li>✔️ Use collection variables for record processing.</li>
+            <li>✔️ Minimize SOQL queries and avoid unnecessary loops.</li>
+            <li>✔️ Use bulk operations like "Update Records" instead of single-record updates.</li>
+            <li>✔️ Test with bulk data using Data Loader.</li>
+        </ul>
+        
+        <h2>5. Example: Bulkifying a Record-Triggered Flow</h2>
+        <pre><code class="code-block">// ❌ Bad Approach (Non-Bulkified)
+For each record in trigger:
+   Get related records
+   Update one record at a time</code></pre>
+        
+        <p>This leads to multiple SOQL queries and DML statements.</p>
+        
+        <pre><code class="code-block">// ✔️ Good Approach (Bulkified)
+Get all related records in one SOQL query
+Process records in loop (without querying again)
+Use "Update Records" to update all at once</code></pre>
+        
+        <p>This reduces the number of SOQL queries and DML operations.</p>
+        
+        <h2>6. Governor Limits and Transactions</h2>
+        <p>⚡ If any interview hits a governor limit, all the interviews in the transaction fail. Any operations that the interviews performed in the transaction are rolled back, and the transaction doesn’t try to perform the operations again. Any operations that access external data aren’t rolled back.</p>
+        
+        <h2>Conclusion</h2>
+        <p>✔️ Salesforce bulkifies Flows automatically, but improper design (e.g., DML inside loops) can lead to governor limits. Following best practices ensures optimal performance.</p>
+        
+        <h2>References</h2>
+        <p>For more details, refer to the official Salesforce documentation: <a href="https://help.salesforce.com/s/articleView?id=platform.flow_concepts_bulkification.htm&type=5" target="_blank">Salesforce Flow Bulkification</a></p>
+    </article>
+</body>
+</html>
