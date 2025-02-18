@@ -1,0 +1,60 @@
+<article>
+    <h2>Why Rollback Order Matters</h2>
+    <p>When designing Screen Flows, it’s crucial to control when DML (Data Manipulation Language) operations are performed to ensure that transactions can be rolled back properly in case of errors. If DML operations are committed too early in the flow, rollback mechanisms will not work as expected.</p>
+
+    <h2>Example Scenarios: Correct vs. Incorrect Rollback Handling</h2>
+
+    <h3>Incorrect Approach (Data Loss Risk)</h3>
+    <pre>
+Screen 1: Capture Account Details
+→ Account Created (DML committed)
+Screen 2: Capture Contract Details
+→ Validation Error Occurs
+
+Since the Account was already committed in Screen 1, it cannot be rolled back, even if a Fault Path is added.
+This results in incomplete or orphaned data in Salesforce.
+    </pre>
+
+    <h3>Correct Approach (Rollback Enabled)</h3>
+    <pre>
+Screen 1: Capture Account Details
+→ Store in Variables (No DML Yet)
+Screen 2: Capture Contact Details
+→ Commit Account and Contact Together
+
+If Contact Creation Fails, Salesforce can rollback the entire transaction, including the Account.
+This prevents orphaned records and maintains data integrity.
+    </pre>
+
+    <h2>Best Practices for Rollback Handling</h2>
+    <ol>
+        <li>Delay DML Operations until all necessary information is collected.</li>
+        <li>Perform all DML in the last screen or at a point where everything is validated.</li>
+        <li>Use the Rollback Element to revert changes if errors occur.</li>
+        <li>Leverage Fault Paths for better error handling but do not rely on them for rollback unless DML timing is correct.</li>
+    </ol>
+
+    <h2>Best Practices for Handling Rollbacks</h2>
+    <h3>Error Handling in Flow</h3>
+    <p>Use Fault Paths in your flow to catch any exceptions. If an error occurs, provide a user-friendly message or redirect the user back to a previous screen. This helps guide the user through the process and ensures that they understand the cause of the error.</p>
+
+    <h3>Minimize Risk by Using Transactions Wisely</h3>
+    <p>While the rollback mechanism is useful, it’s always good to minimize the chance of errors in the first place by ensuring data validation before performing updates or creating records.</p>
+
+    <h3>Transaction Handling</h3>
+    <p>If you're working with multiple flows or screens that should operate as one transaction, it's crucial not to perform DML operations (Data Manipulation Language)—like creating, updating, or deleting records—until the last screen of the flow. This ensures that all the actions are wrapped in a single transaction, and if an error occurs at any point, none of the changes made during the flow are committed to the database.</p>
+
+    <h3>Salesforce’s Built-in Rollback Mechanism</h3>
+    <p>Salesforce uses a single transaction model for Screen Flows, which means that all changes made during the flow (like record creation or updates) are part of the same transaction. If the flow is interrupted or an error occurs, Salesforce will automatically roll back any changes made in the flow. However, it’s important to know the order in which actions are rolled back.</p>
+
+    <h3>Rollback Sequence</h3>
+    <p>The rollback happens in reverse order, meaning that the actions at the end of the flow (such as updates or deletes) are undone first. For example:</p>
+    <pre>
+If a flow updates records, creates new records, and then deletes records,
+the delete operations are rolled back first, followed by the record creation and updates.
+    </pre>
+
+    <h2>References</h2>
+    <p><a href="https://www.linkedin.com/pulse/order-matters-mastering-flow-rollback-element-screen-flows-werner-vrsse/">Stuart Werner - Mastering Flow Rollback Element in Screen Flows</a></p>
+</article>
+
