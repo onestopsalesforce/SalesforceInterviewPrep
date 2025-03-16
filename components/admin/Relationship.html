@@ -1,0 +1,93 @@
+<article>
+
+    <h2>Visibility and Sharing in Relationships</h2>
+    <p>The following table illustrates how visibility, sharing, ownership, and cascade deletion are handled in  relationships in Salesforce</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Relationship Type</th>
+          <th>Parent-Child Relationship</th>
+          <th>Visibility of Child Record</th>
+          <th>Sharing Access</th>
+          <th>Cascade Deletion</th>
+          <th>Ownership</th>
+          <th>Roll-Up Summary Fields</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Lookup Relationship</td>
+          <td>One-to-One or One-to-Many (Child can have multiple Parents)</td>
+          <td>Child record is visible to users with access to the parent record, unless access is restricted separately</td>
+          <td>Based on the user's access to the parent object, unless restricted</td>
+          <td>No cascade deletion; deleting the parent does not affect the child</td>
+          <td>The child’s owner can be set independently of the parent</td>
+          <td>Not supported in Lookup Relationships</td>
+        </tr>
+        <tr>
+          <td>Master-Detail Relationship</td>
+          <td>One-to-Many (Child is dependent on Parent)</td>
+          <td>Child visibility depends on the parent record’s sharing settings</td>
+          <td>Child record’s visibility follows parent’s sharing rules and is controlled by parent</td>
+          <td>Yes, cascade deletion occurs (if the parent is deleted, the child is deleted)</td>
+          <td>Ownership is automatically transferred to the parent’s owner</td>
+          <td>Supported, can create Roll-Up Summary Fields on parent</td>
+        </tr>
+        <tr>
+          <td>Many-to-Many (via Junction Object)</td>
+          <td>Two Parent Objects linked by a Junction Object</td>
+          <td>Child record’s visibility depends on the visibility of both parent records</td>
+          <td>Child’s visibility is controlled by both parent record’s sharing rules; can be influenced by who created the parent records</td>
+          <td>Yes, if either parent is deleted, the junction (child) record is also deleted</td>
+          <td>Junction object’s ownership depends on the two parent records (can be set to specific ownership or follow parent’s owner)</td>
+          <td>Roll-Up Summary can be used if it’s a Master-Detail relationship to the child</td>
+        </tr>
+        <tr>
+          <td>Self Relationship (Lookup)</td>
+          <td>Record is linked to itself (e.g., employee to manager)</td>
+          <td>Visibility based on the Lookup relationship and sharing settings</td>
+          <td>Child record’s visibility depends on the parent record’s visibility and sharing</td>
+          <td>No cascade deletion unless defined explicitly</td>
+          <td>Ownership is independent, can be assigned as needed</td>
+          <td>Not applicable unless explicitly created with a Roll-Up Summary field</td>
+        </tr>
+        <tr>
+          <td>External Lookup Relationship</td>
+          <td>Salesforce record linked to external data (via External Object)</td>
+          <td>Child visibility depends on external data sharing settings</td>
+          <td>Sharing and access depend on external object’s configuration and permissions</td>
+          <td>Deleting the external object does not affect the Salesforce child record</td>
+          <td>Ownership depends on the configuration of the relationship</td>
+          <td>Not applicable unless custom logic or tools are implemented</td>
+        </tr>
+        <tr>
+          <td>Indirect Lookup Relationship</td>
+          <td>Salesforce record linked to external object using external ID</td>
+          <td>Visibility is controlled by the external object’s sharing rules</td>
+          <td>Access depends on the external object’s permissions and Salesforce setup</td>
+          <td>Cascade deletion behavior depends on the configuration of the external system</td>
+          <td>Ownership of the Salesforce record depends on the external record’s configuration</td>
+          <td>Not applicable, typically used for external records</td>
+        </tr>
+      </tbody>
+    </table>  
+
+    
+    <h2>What is a Many-to-Many Relationship?</h2>
+    <p>A **Many-to-Many relationship** in Salesforce allows one record from one object to be linked to many records from another object. This is achieved through a **junction object**, which acts as a child of both objects and creates links between them. This is particularly useful when both parent objects need to maintain relationships with multiple records of the other object.</p>
+    
+    <h2>How Does the Child Record’s Access Work?</h2>
+    <p>In a Many-to-Many relationship, access to a child record is not just influenced by the parent that created it. It depends on the visibility and sharing settings of **both parent records**. Salesforce takes into account the sharing rules set on the parent records, and **visibility** of the child record is determined by the **visibility** of both parent records. Furthermore, the **user who created the parent record** might impact access to the child record based on who created it and the sharing model.</p>
+    
+    <h2>Visibility, Sharing, and Cascade Deletion in Many-to-Many Relationships</h2>
+    <p>In a **Many-to-Many relationship**, the child record inherits its sharing and visibility rules from both parent records. It means that if a user has access to **both parent records**, they will also have access to the junction (child) object record. However, the child record will only be visible to users who have access to at least one of the parents, depending on the sharing rules.</p>
+  
+    <p>As for **cascade deletion**, if either of the parent records is deleted, the child record will also be deleted, since the junction object is typically in a **Master-Detail relationship** with both parents. Deleting a child record can happen as a result of deleting either parent, making cascade deletion an essential aspect of many-to-many relationships in Salesforce.</p>
+  
+    <h2>Ownership and Roll-Up Summary Fields</h2>
+    <p>The **ownership** of the junction object (child record) depends on how the parent records are configured. You can set the child’s ownership to follow the parent record or be independent, depending on your needs. However, if it follows one of the parents, the owner will be that parent record’s owner. Moreover, **Roll-Up Summary Fields** are available if the junction object has a **Master-Detail relationship** with the parent. These fields can be used to summarize child records into the parent, such as summing amounts, counting related records, or calculating the minimum/maximum values.</p>
+  
+  
+</article>
+  
