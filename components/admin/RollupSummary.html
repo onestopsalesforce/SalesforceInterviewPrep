@@ -1,19 +1,19 @@
-<article style="max-width: 800px; margin: 0 auto; background-color: #121212; color: #e0e0e0; font-family: Arial, sans-serif;">
-    <h1 style="color: #ff5722;">Understanding Roll-Up Summary Fields in Salesforce</h1>
+<article >
+    <h1>Understanding Roll-Up Summary Fields in Salesforce</h1>
     <p>In Salesforce, Roll-Up Summary fields are used to aggregate values from related child records to summarize information on the parent record. These fields allow you to calculate sums, counts, minimum, or maximum values based on the child records in a master-detail relationship. Here's what you need to know about Roll-Up Summary fields:</p>
     
-    <h2 style="color: #ff5722;">Master-Detail Relationships</h2>
+    <h2 >Master-Detail Relationships</h2>
     <p>Roll-Up Summary fields can only be created in **Master-Detail relationships**. In this relationship type, the parent record controls the behavior of the related child records. This means that Roll-Up Summary fields can aggregate data from the child objects to the parent object.</p>
     <p>However, you cannot create Roll-Up Summary fields in **Lookup relationships** unless you use third-party tools like <strong>Declarative Lookup Rollup Summary (DLRS)</strong> or custom solutions like <strong>Apex triggers</strong> or **Flows**.</p>
 
-    <h2 style="color: #ff5722;">Creating Roll-Up Summary Fields</h2>
+    <h2 >Creating Roll-Up Summary Fields</h2>
     <p>You can create Roll-Up Summary fields based on **Formula fields** or **Custom fields** in the related child objects. This gives you flexibility to aggregate data from various field types on the child records.</p>
 
-    <h2 style="color: #ff5722;">Handling Large Data Volumes</h2>
+    <h2 >Handling Large Data Volumes</h2>
     <p>When dealing with large data volumes, it's important to consider performance. Salesforce Roll-Up Summary fields can be slow when processing large numbers of child records, especially if there are more than **10,000** child records involved in one roll-up calculation.</p>
     <p>To handle large datasets, it's advisable to use tools like **Declarative Lookup Rollup Summary**, **Apex triggers**, or **Scheduled batch jobs** to periodically recalculate and update these fields efficiently.</p>
 
-    <h2 style="color: #ff5722;">Limitations in Roll-Up Summary Fields</h2>
+    <h2 >Limitations in Roll-Up Summary Fields</h2>
     <ul>
         <li>Roll-Up Summary fields **do not automatically recalculate** when child records (like Leads, Contacts, or Campaign Members) are deleted.</li>
         <li>Salesforce provides an option to manually update Roll-Up Summary fields called **"Force a mass recalculation of this field"**. This option can be enabled while editing the Roll-Up Summary field configuration in Salesforce Setup.</li>
@@ -26,7 +26,7 @@
         <li>In the Roll-Up Summary Options, select **Force a mass recalculation of this field**.</li>
     </ol>
 
-    <h2 style="color: #ff5722;">Limits on Roll-Up Summary Fields</h2>
+    <h2 >Limits on Roll-Up Summary Fields</h2>
     <p>Salesforce places some limits on Roll-Up Summary fields to optimize performance:</p>
     <ul>
         <li>You can create up to **25 Roll-Up Summary fields** per object. This limit includes both standard and custom Roll-Up Summary fields.</li>
