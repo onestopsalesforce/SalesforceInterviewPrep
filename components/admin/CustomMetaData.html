@@ -1,0 +1,63 @@
+<article >
+    <h1 >Understanding Salesforce Custom Metadata Types</h1>
+  
+    <p><strong>Custom Metadata Types (CMTs)</strong> are similar to Custom Objects, but instead of storing transactional or user data, they are designed to store configuration or application setup data that rarely changes. CMTs are powerful tools for architecting flexible, metadata-driven solutions across your Salesforce orgs.</p>
+  
+    <h2 >Core Characteristics</h2>
+    <ul>
+      <li>CMTs are stored in the <strong>Metadata layer</strong>, making them deployable and version-controlled just like code.</li>
+      <li>They support deployment via <strong>Change Sets</strong>, <strong>Metadata API</strong>, <strong>Salesforce CLI</strong>, and both <strong>managed/unmanaged packages</strong>.</li>
+      <li>Unlike <strong>Custom Settings</strong>, CMTs do not require data migration scripts or manual setup during deployment.</li>
+    </ul>
+  
+    <h2 >Governor Limits</h2>
+    <ul>
+      <li><strong>SOQL Queries on CMTs</strong> do <u>not</u> count toward governor query limits (100 sync / 200 async).</li>
+      <li><strong>Exception:</strong> If a Long Text Area field is queried, it <u>does</u> count toward SOQL limits.</li>
+      <li><strong>Non-SOQL Methods</strong> (Spring ’21+): <code style="background-color:#1e1e1e;color:#ffcc00;">getAll()</code>, <code style="background-color:#1e1e1e;color:#ffcc00;">getInstance(recordId)</code>, <code style="background-color:#1e1e1e;color:#ffcc00;">getInstance(qualifiedApiName)</code>, and <code style="background-color:#1e1e1e;color:#ffcc00;">getInstance(developerName)</code> are exempt from SOQL limits.</li>
+      <li><strong>Note:</strong> Limits still apply to total rows returned (50,000), heap size, and CPU time.</li>
+    </ul>
+  
+    <h2 >Limitations</h2>
+    <ul>
+      <li>No support for multi-level relationships (e.g., <code style="background-color:#1e1e1e;color:#ffcc00;">Account.Owner.Name</code> is not valid).</li>
+      <li>No support for Hierarchy logic (unlike Custom Settings).</li>
+      <li><strong>No Field-Level Security (FLS)</strong> support.</li>
+      <li><strong>Deleted picklist values</strong> remain on existing records but cannot be reused or created anew.</li>
+      <li>No schema validation for object or field references. If the referenced field is deleted, no compile-time error is thrown — runtime checks like <code style="background-color:#1e1e1e;color:#ffcc00;">Schema.getGlobalDescribe()</code> must be used.</li>
+    </ul>
+  
+    <h2 >Common Use Cases</h2>
+    <ul>
+      <li>Logging configurations at the object level.</li>
+      <li>Field mappings for data transformation.</li>
+      <li>Defining validation rules for Triggers, Flows, etc. (e.g., field lengths, required fields).</li>
+      <li>Bypass flags for skipping trigger logic during batch operations.</li>
+      <li>Batch job configurations like date filters (last 30/60 days), task creation toggles.</li>
+      <li>Feature flags for conditional enablement of new functionality.</li>
+    </ul>
+  
+    <h2 >Access Methods</h2>
+    <ul>
+      <li>Supported via <strong>Apex, Formulas, Setup UI</strong>, and APIs.</li>
+      <li>Supports Apex namespace resolution within managed packages.</li>
+    </ul>
+  
+    <h2 >Advanced Use Case: Multi-Level Configuration</h2>
+    <p>You can design multi-level Custom Metadata frameworks. For example:</p>
+    <ul>
+      <li><strong>Level 1:</strong> A CMT called <em>Trigger_Config</em> stores Trigger Class Name and Object API Name.</li>
+      <li><strong>Level 2:</strong> Another CMT called <em>Trigger_Controller_Map</em> references <em>Trigger_Config</em> and lists all associated controller classes.</li>
+    </ul>
+    <p>This avoids duplication of trigger metadata across records and offers a centralized configuration pattern that scales.</p>
+  
+    <p>Such a structure is especially helpful in large orgs or managed packages, where reusability, metadata-driven logic, and visibility matter.</p>
+
+    <section>
+        <h2>Reference/Learning Materials</h2>
+        <ul>
+            <li><a href="https://youtu.be/zxQu0Ozo4G0?si=7nszrXdcEh7jxVG2" target="_blank" rel="noopener noreferrer">Salesforce Exclusive: Custom Settings & Custom Metadata in Salesforce with Scenarios - 2020</a></li>                          
+        </ul>
+    </section>
+  </article>
+  
