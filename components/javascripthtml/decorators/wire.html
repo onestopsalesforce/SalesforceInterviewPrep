@@ -1,97 +1,104 @@
 <article>
     <h1>Understanding the <code>@wire</code> Decorator in Salesforce Lightning Web Components</h1>
   
-    <p>
-      The <code>@wire</code> decorator in Lightning Web Components (LWC) is primarily used in three contexts:
-    </p>
+    <h2>📝 Blog Summary</h2>
+    <p>This blog covers how the <code>@wire</code> decorator is used in Lightning Web Components (LWC) in three primary contexts:</p>
     <ul>
-      <li><strong>Calling Apex methods</strong> to fetch custom server-side data</li>
-      <li><strong>Leveraging UI API wire adapters</strong> to retrieve record data, object metadata, and picklist values</li>
-      <li><strong>Accessing user and navigation data</strong> using built-in services like <code>getUserInfo</code> and <code>CurrentPageReference</code></li>
+      <li><strong>Calling Apex Methods</strong> with <code>@AuraEnabled(cacheable=true)</code></li>
+      <li><strong>Accessing UI API modules</strong> like <code>getRecord</code>, <code>getObjectInfo</code>, and <code>getPicklistValues</code></li>
+      <li><strong>Retrieving User Info and Navigation Context</strong></li>
     </ul>
-    <p>
-      This blog explores all these use cases with examples to help you understand how to use <code>@wire</code> effectively.
-    </p>
+    <p>In addition, this article highlights:</p>
+    <ul>
+      <li>How to <strong>gracefully handle situations</strong> when server-side data takes longer than expected to load</li>
+      <li>How LWC components <strong>reactively refresh</strong> when the data retrieved via <code>@wire</code> becomes available</li>
+    </ul>
   
-    <h2>1. Importing <code>@wire</code></h2>
-    <p>
-      Before using <code>@wire</code>, you must import it from the LWC module:
-    </p>
+    <h2>1. Importing the Wire Decorator</h2>
     <pre><code>import { LightningElement, wire } from 'lwc';</code></pre>
   
-    <h2>2. UI API Modules (<code>lightning/ui*</code>)</h2>
+    <h2>2. UI API Modules</h2>
+    <ul>
+      <li>
+        <strong>getRecord</strong> — Fetches record data based on recordId and specified fields.
+        <pre><code>@wire(getRecord, { recordId: '$recordId', fields: ['Account.Name'] }) account;</code></pre>
+      </li>
+      <li>
+        <strong>getObjectInfo</strong>, <strong>getPicklistValues</strong>, <strong>getListInfo</strong>, <strong>getRelatedListInfo</strong>
+        — Fetch metadata about objects, picklist values, list views, or related lists.
+      </li>
+    </ul>
+  
+    <h2>3. User Information</h2>
     <p>
-      These built-in wire adapters allow you to retrieve Salesforce metadata and record-level data without writing Apex code.
+      Use <code>getUserInfo</code> from <code>lightning/user</code> to fetch data about the current user.
     </p>
+    <pre><code>@wire(getUserInfo) user;</code></pre>
+  
+    <h2>4. Navigation Context</h2>
     <ul>
-      <li><code>getRecord</code> – Retrieves specific fields from a record.</li>
-      <li><code>getObjectInfo</code> – Fetches metadata about an object (label, field details, etc.).</li>
-      <li><code>getPicklistValues</code> – Retrieves picklist options for a given record type and field.</li>
-      <li><code>getListInfo</code> – Retrieves metadata about a list view.</li>
-      <li><code>getRelatedListInfo</code> – Fetches metadata about related lists.</li>
+      <li>
+        <strong>CurrentPageReference</strong> — Access the current page's state or URL parameters.
+        <pre><code>@wire(CurrentPageReference) pageRef;</code></pre>
+      </li>
+      <li>
+        <strong>getNavItems</strong> — Retrieve Salesforce navigation items (e.g., custom tabs or apps).
+      </li>
     </ul>
-  
-    <p><strong>Example:</strong> Fetching a record’s name and phone:</p>
-    <pre><code>
-  @wire(getRecord, {
-    recordId: '$recordId',
-    fields: ['Account.Name', 'Account.Phone']
-  }) account;
-    </code></pre>
-  
-    <h2>3. User Info via <code>lightning/user</code></h2>
-    <p>
-      This module includes a wire adapter to get information about the logged-in user.
-    </p>
-    <ul>
-      <li><code>getUserInfo</code> – Returns the current user's ID, name, profile ID, and more.</li>
-    </ul>
-  
-    <p><strong>Example:</strong> Fetching the user’s name:</p>
-    <pre><code>
-  @wire(getUserInfo) user;
-    </code></pre>
-  
-    <h2>4. Navigation Context via <code>lightning/navigation</code></h2>
-    <ul>
-      <li><code>CurrentPageReference</code> – Retrieves the current page's context including URL state and query parameters.</li>
-      <li><code>getNavItems</code> – Retrieves navigation menu items for custom apps and tabs.</li>
-    </ul>
-  
-    <p><strong>Example:</strong> Accessing a URL query parameter like <code>c__filter</code>:</p>
-    <pre><code>
-  @wire(CurrentPageReference) pageRef;
-  
-  get filter() {
-    return this.pageRef?.state?.c__filter;
-  }
-    </code></pre>
   
     <h2>5. Custom Apex Methods</h2>
     <p>
-      You can wire custom Apex methods only if they are annotated with <code>@AuraEnabled(cacheable=true)</code>. This enables reactive, cacheable server-side data fetching. 
+      You can wire custom Apex methods only if they are annotated with <code>@AuraEnabled(cacheable=true)</code>. This enables reactive, cacheable server-side data fetching.
     </p>
-    <p>
-      <strong>Important:</strong> If <code>cacheable=true</code> is <em>not</em> specified, the system will throw a runtime error when the method is used with <code>@wire</code>. Only cacheable Apex methods can be used declaratively with the <code>@wire</code> decorator.
-    </p>
-    
-  
-    <p><strong>Example:</strong> Fetching accounts filtered by industry:</p>
-    <pre><code>
-  // Apex
+    <ul>
+      <li>
+        <strong>Required:</strong> <code>cacheable=true</code> must be set or a runtime error will occur.
+      </li>
+      <li>
+        Only primitive types, Lists, or Maps can be passed as parameters.
+      </li>
+      <li>
+        Parameters must be reactive (e.g., <code>'$industry'</code>).
+      </li>
+      <li>
+        No DML or state changes inside cacheable methods.
+      </li>
+    </ul>
+    <pre><code>// Apex
   @AuraEnabled(cacheable=true)
   public static List&lt;Account&gt; getAccounts(String industry) {
     return [SELECT Id, Name FROM Account WHERE Industry = :industry];
   }
   
   // JavaScript
-  @wire(getAccounts, { industry: '$industry' }) accounts;
-    </code></pre>
+  @wire(getAccounts, { industry: '$industry' }) accounts;</code></pre>
+  
+    <h2>Handling Delays Gracefully with <code>@wire</code></h2>
+    <p>
+      Because <code>@wire</code> runs asynchronously, the data may take a moment to load. To provide a better user experience, handle these delays gracefully by using UI state flags.
+    </p>
+    <p><strong>Strategy:</strong></p>
+    <ul>
+      <li>Track <code>isLoading</code> to show a spinner or loading message.</li>
+      <li>Handle <code>error</code> states with user-friendly messages.</li>
+      <li>Optionally use a timeout or visual indicator if load takes too long (via <code>setTimeout</code>).</li>
+    </ul>
+  
+    <pre><code>@wire(getAccounts, { industry: '$industry' })
+  wiredAccounts({ error, data }) {
+    this.isLoading = true;
+    if (data) {
+      this.accounts = data;
+      this.error = undefined;
+    } else if (error) {
+      this.error = error;
+      this.accounts = undefined;
+    }
+    this.isLoading = false;
+  }</code></pre>
   
     <p>
-      In this example, any change in the <code>industry</code> property will automatically trigger a new call to the Apex method, and the component will re-render with the updated data.
+      While <code>@wire</code> does not support Promises, this approach helps ensure users are informed and not left waiting without feedback. LWC’s reactivity will automatically refresh the component once the data becomes available.
     </p>
-  
-   
   </article>
   
