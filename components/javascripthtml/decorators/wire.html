@@ -1,0 +1,97 @@
+<article>
+    <h1>Understanding the <code>@wire</code> Decorator in Salesforce Lightning Web Components</h1>
+  
+    <p>
+      The <code>@wire</code> decorator in Lightning Web Components (LWC) is primarily used in three contexts:
+    </p>
+    <ul>
+      <li><strong>Calling Apex methods</strong> to fetch custom server-side data</li>
+      <li><strong>Leveraging UI API wire adapters</strong> to retrieve record data, object metadata, and picklist values</li>
+      <li><strong>Accessing user and navigation data</strong> using built-in services like <code>getUserInfo</code> and <code>CurrentPageReference</code></li>
+    </ul>
+    <p>
+      This blog explores all these use cases with examples to help you understand how to use <code>@wire</code> effectively.
+    </p>
+  
+    <h2>1. Importing <code>@wire</code></h2>
+    <p>
+      Before using <code>@wire</code>, you must import it from the LWC module:
+    </p>
+    <pre><code>import { LightningElement, wire } from 'lwc';</code></pre>
+  
+    <h2>2. UI API Modules (<code>lightning/ui*</code>)</h2>
+    <p>
+      These built-in wire adapters allow you to retrieve Salesforce metadata and record-level data without writing Apex code.
+    </p>
+    <ul>
+      <li><code>getRecord</code> – Retrieves specific fields from a record.</li>
+      <li><code>getObjectInfo</code> – Fetches metadata about an object (label, field details, etc.).</li>
+      <li><code>getPicklistValues</code> – Retrieves picklist options for a given record type and field.</li>
+      <li><code>getListInfo</code> – Retrieves metadata about a list view.</li>
+      <li><code>getRelatedListInfo</code> – Fetches metadata about related lists.</li>
+    </ul>
+  
+    <p><strong>Example:</strong> Fetching a record’s name and phone:</p>
+    <pre><code>
+  @wire(getRecord, {
+    recordId: '$recordId',
+    fields: ['Account.Name', 'Account.Phone']
+  }) account;
+    </code></pre>
+  
+    <h2>3. User Info via <code>lightning/user</code></h2>
+    <p>
+      This module includes a wire adapter to get information about the logged-in user.
+    </p>
+    <ul>
+      <li><code>getUserInfo</code> – Returns the current user's ID, name, profile ID, and more.</li>
+    </ul>
+  
+    <p><strong>Example:</strong> Fetching the user’s name:</p>
+    <pre><code>
+  @wire(getUserInfo) user;
+    </code></pre>
+  
+    <h2>4. Navigation Context via <code>lightning/navigation</code></h2>
+    <ul>
+      <li><code>CurrentPageReference</code> – Retrieves the current page's context including URL state and query parameters.</li>
+      <li><code>getNavItems</code> – Retrieves navigation menu items for custom apps and tabs.</li>
+    </ul>
+  
+    <p><strong>Example:</strong> Accessing a URL query parameter like <code>c__filter</code>:</p>
+    <pre><code>
+  @wire(CurrentPageReference) pageRef;
+  
+  get filter() {
+    return this.pageRef?.state?.c__filter;
+  }
+    </code></pre>
+  
+    <h2>5. Custom Apex Methods</h2>
+    <p>
+      You can wire custom Apex methods only if they are annotated with <code>@AuraEnabled(cacheable=true)</code>. This enables reactive, cacheable server-side data fetching. 
+    </p>
+    <p>
+      <strong>Important:</strong> If <code>cacheable=true</code> is <em>not</em> specified, the system will throw a runtime error when the method is used with <code>@wire</code>. Only cacheable Apex methods can be used declaratively with the <code>@wire</code> decorator.
+    </p>
+    
+  
+    <p><strong>Example:</strong> Fetching accounts filtered by industry:</p>
+    <pre><code>
+  // Apex
+  @AuraEnabled(cacheable=true)
+  public static List&lt;Account&gt; getAccounts(String industry) {
+    return [SELECT Id, Name FROM Account WHERE Industry = :industry];
+  }
+  
+  // JavaScript
+  @wire(getAccounts, { industry: '$industry' }) accounts;
+    </code></pre>
+  
+    <p>
+      In this example, any change in the <code>industry</code> property will automatically trigger a new call to the Apex method, and the component will re-render with the updated data.
+    </p>
+  
+   
+  </article>
+  
