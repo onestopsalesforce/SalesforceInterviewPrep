@@ -14,17 +14,17 @@
     <ul>
       <li><strong>SOQL Queries on CMTs</strong> do <u>not</u> count toward governor query limits (100 sync / 200 async).</li>
       <li><strong>Exception:</strong> If a Long Text Area field is queried, it <u>does</u> count toward SOQL limits.</li>
-      <li><strong>Non-SOQL Methods</strong> (Spring ’21+): <code style="background-color:#1e1e1e;color:#ffcc00;">getAll()</code>, <code style="background-color:#1e1e1e;color:#ffcc00;">getInstance(recordId)</code>, <code style="background-color:#1e1e1e;color:#ffcc00;">getInstance(qualifiedApiName)</code>, and <code style="background-color:#1e1e1e;color:#ffcc00;">getInstance(developerName)</code> are exempt from SOQL limits.</li>
+      <li><strong>Non-SOQL Methods</strong> (Spring ’21+): <code >getAll()</code>, <code >getInstance(developerName)</code> are exempt from SOQL limits.</li>
       <li><strong>Note:</strong> Limits still apply to total rows returned (50,000), heap size, and CPU time.</li>
     </ul>
   
     <h2 >Limitations</h2>
     <ul>
-      <li>No support for multi-level relationships (e.g., <code style="background-color:#1e1e1e;color:#ffcc00;">Account.Owner.Name</code> is not valid).</li>
+      <li>No support for multi-level relationships (e.g., <code >Account.Owner.Name</code> is not valid).</li>
       <li>No support for Hierarchy logic (unlike Custom Settings).</li>
       <li><strong>No Field-Level Security (FLS)</strong> support.</li>
       <li><strong>Deleted picklist values</strong> remain on existing records but cannot be reused or created anew.</li>
-      <li>No schema validation for object or field references. If the referenced field is deleted, no compile-time error is thrown — runtime checks like <code style="background-color:#1e1e1e;color:#ffcc00;">Schema.getGlobalDescribe()</code> must be used.</li>
+      <li>No schema validation for object or field references. If the referenced field is deleted, no compile-time error is thrown — runtime checks like <code >Schema.getGlobalDescribe()</code> must be used.</li>
     </ul>
   
     <h2 >Common Use Cases</h2>
