@@ -1,0 +1,65 @@
+<article>
+    <h1>JavaScript → Data Fetch: Server-Side Techniques in Salesforce LWC</h1>
+  
+    <p>This blog section explores the different techniques for retrieving data from Salesforce's server-side layers into Lightning Web Components (LWC) using JavaScript. It focuses on declarative and imperative approaches to accessing Salesforce data through the <strong>@wire decorator</strong>, <strong>UI*API wire adapters</strong>, and <strong>imperative Apex calls</strong>.</p>
+  
+    <h2>Covered Data Fetching Techniques:</h2>
+  
+    <ul>
+      <li><strong>@wire Decorator</strong>
+        <ul>
+          <li>Reactive binding with UI*API (e.g., <code>getRecord</code>, <code>getObjectInfo</code>, <code>getPicklistValues</code>)</li>
+          <li>Used with Apex methods annotated with <code>@AuraEnabled(cacheable=true)</code></li>
+          <li>Automatically re-invokes when reactive variables (e.g., <code>$recordId</code>) change</li>
+        </ul>
+      </li>
+  
+      <li><strong>Imperative Apex Calls</strong>
+        <ul>
+          <li>Useful for on-demand, user-initiated logic (e.g., button clicks or conditional scenarios)</li>
+          <li>Returns a <code>Promise</code>—making it ideal for chaining, error handling, and UI state management</li>
+          <li>Supports constructs like <code>.then()</code>, <code>.catch()</code>, or async/await</li>
+        </ul>
+      </li>
+    </ul>
+  
+    <p>While Salesforce provides out-of-the-box components such as <code>&lt;lightning-record-form&gt;</code> and <code>&lt;lightning-record-edit-form&gt;</code>, these are only mentioned here for context and will not be detailed in this series. This section concentrates on programmatic approaches that offer more flexibility and control.</p>
+  
+    <h2>Complementary Topics Also Covered:</h2>
+  
+    <ul>
+      <li><code>refreshApex</code> – to manually refresh wired data</li>
+      <li><code>refreshView</code> – for re-rendering specific parts of the UI</li>
+      <li><code>notifyRecordUpdateAvailable</code> – to inform the framework of record changes</li>
+      <li><strong>Handling long-running data fetches</strong>
+        <ul>
+          <li>Implementing <code>isLoading</code> flags or UI indicators</li>
+          <li>Using conditional rendering (e.g., <code>if:true</code>) to show spinners or fallbacks</li>
+          <li>Preventing duplicate loading logic with state variables</li>
+        </ul>
+      </li>
+      <li><strong>Using Promises with Imperative Calls</strong>
+        <ul>
+          <li>Imperative Apex methods return Promises that allow handling asynchronous responses</li>
+          <li>Best handled using <code>try...catch</code> with <code>async/await</code> for readability</li>
+          <li>Supports error logging, toast notifications, and alternate flows on failure</li>
+          <li>Example: 
+            <pre><code>async handleClick() {
+    this.isLoading = true;
+    try {
+      const data = await fetchAccountDetails({ industry: this.industry });
+      this.accounts = data;
+    } catch (error) {
+      console.error('Error fetching data', error);
+    } finally {
+      this.isLoading = false;
+    }
+  }</code></pre>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  
+    <p>Each of these techniques and patterns will be explored in detail in the subsequent blog entries, helping you master how to fetch, manage, and display server-side data efficiently in Salesforce LWC—while also ensuring a responsive and user-friendly experience.</p>
+  </article>
+  
