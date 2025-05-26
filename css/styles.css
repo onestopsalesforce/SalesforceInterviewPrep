@@ -104,23 +104,25 @@ body {
   
   /* Code block styles */
   code {
-    background-color: #1e1e1e;
-    color: #ffcc00;
-    padding: 2px 5px;
+    background-color: #1e1e1e; /* dark gray background */
+    color: #ffffff;            /* white text */
+    padding: 2px 4px;
+    font-family: Consolas, Monaco, 'Courier New', monospace;
+    font-size: 0.95em;
     border-radius: 3px;
-    font-family: Consolas, monospace;
-    text-wrap: pretty;
   }
   
-  /* Preformatted block styles */
   pre {
     background-color: #1e1e1e;
-    color: #e0e0e0;
-    padding: 15px;
-    border-radius: 5px;
+    color: #ffffff;
+    padding: 10px;
     overflow-x: auto;
-    font-family: Consolas, monospace;
+    font-family: Consolas, Monaco, 'Courier New', monospace;
+    font-size: 0.95em;
+    border-radius: 5px;
+    line-height: 1.5;
   }
+  
   
   /* Unordered list styles */
   ul {
