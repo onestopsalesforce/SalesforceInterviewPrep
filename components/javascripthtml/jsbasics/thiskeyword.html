@@ -1,0 +1,118 @@
+<article class="blog-post">
+    <h1>Understanding JavaScript <code>this</code> Keyword</h1>
+  
+    <p>JavaScript defines lexical scope at compile time, but the value of <code>this</code> is determined by how a function is invoked at runtime, not by where it is written.</p>
+  
+    <h2>1. Method Invocation on an Object</h2>
+    <p>When a method is called on an object, <code>this</code> refers to the object on which the method is invoked.</p>
+    <pre><code>const user = {
+    name: "Alice",
+    greet() {
+      console.log(this.name);
+    }
+  };
+  user.greet(); // Output: "Alice"
+  </code></pre>
+  
+    <h2>2. Function Invocation Without an Object</h2>
+    <p>When a function is invoked without an object reference, <code>this</code> refers to the global object (<code>window</code> in browsers) in non-strict mode, or <code>undefined</code> in strict mode—unless the function is explicitly bound using <code>call</code>, <code>apply</code>, or <code>bind</code>.</p>
+    <pre><code>function showThis() {
+    console.log(this);
+  }
+  showThis(); // window (or undefined in strict mode)</code></pre>
+  
+    <pre><code>const boundFn = showThis.bind({ msg: "Hello" });
+  boundFn(); // { msg: "Hello" }
+  </code></pre>
+  
+    <h2>3. <code>this</code> in Nested Functions</h2>
+    <p>In nested functions, even inside a method, <code>this</code> may not behave as expected. If an inner function is defined using the regular <code>function</code> keyword, it does not inherit <code>this</code> from the outer method. Instead, it refers to the global object (or <code>undefined</code> in strict mode).</p>
+    <pre><code>const obj = {
+    count: 10,
+    increment() {
+      function inner() {
+        console.log(this.count); // undefined
+      }
+      inner();
+    }
+  };
+  obj.increment();
+  </code></pre>
+  
+    <h3>Solutions:</h3>
+    <ul>
+      <li>Use <code>bind</code>, <code>call</code>, or <code>apply</code> to explicitly set <code>this</code>.</li>
+      <li>Use arrow functions, which capture <code>this</code> from the enclosing lexical context.</li>
+    </ul>
+  
+    <h3>Example Using <code>bind</code>:</h3>
+    <pre><code>const obj = {
+    count: 10,
+    increment() {
+      function inner() {
+        console.log(this.count);
+      }
+      inner.bind(this)();
+    }
+  };
+  obj.increment(); // Output: 10
+  </code></pre>
+  
+    <h3>Example Using Arrow Function:</h3>
+    <pre><code>const obj = {
+    count: 10,
+    increment() {
+      const inner = () => {
+        console.log(this.count);
+      };
+      inner();
+    }
+  };
+  obj.increment(); // Output: 10
+  </code></pre>
+  
+    <h2>4. 🔍 Arrow Functions</h2>
+    <p>Arrow functions do not have their own <code>this</code>. Instead, they inherit <code>this</code> from the surrounding (lexical) scope in which they are defined.</p>
+  
+    <h3>Benefits of Arrow Functions:</h3>
+    <ul>
+      <li>Avoid the need for <code>bind</code>, <code>call</code>, or <code>apply</code> when working with nested functions or callbacks.</li>
+      <li>Simplify code for array operations like <code>map()</code>, <code>filter()</code>, <code>reduce()</code>, etc., where regular functions would otherwise require additional logic to preserve the intended <code>this</code>.</li>
+    </ul>
+  
+    <h3>Array Method Example (Using Arrow Function):</h3>
+    <pre><code>const nums = [1, 2, 3];
+  const squares = nums.map(n => n * n);
+  console.log(squares); // [1, 4, 9]
+  </code></pre>
+  
+    <p>If arrow functions were not available, you'd need to either bind <code>this</code> explicitly or assign a reference to it:</p>
+  
+    <h4>Using Regular Function with <code>bind</code>:</h4>
+    <pre><code>const context = {
+    factor: 2,
+    multiply(nums) {
+      return nums.map(function(n) {
+        return n * this.factor;
+      }.bind(this));
+    }
+  };
+  console.log(context.multiply([1, 2, 3])); // [2, 4, 6]
+  </code></pre>
+  
+    <h4>Using Arrow Function (Cleaner):</h4>
+    <pre><code>const context = {
+    factor: 2,
+    multiply(nums) {
+      return nums.map(n => n * this.factor);
+    }
+  };
+  console.log(context.multiply([1, 2, 3])); // [2, 4, 6]
+  </code></pre>
+  
+    <p>With arrow functions, the lexical scope is preserved automatically, avoiding the need for <code>bind</code>.</p>
+  
+    <h2>Conclusion</h2>
+    <p>Understanding how <code>this</code> behaves in different contexts is crucial to mastering JavaScript. Use arrow functions for predictable lexical scoping, and use <code>call</code>, <code>apply</code>, or <code>bind</code> when you need to control or override <code>this</code> explicitly.</p>
+  </article>
+  
