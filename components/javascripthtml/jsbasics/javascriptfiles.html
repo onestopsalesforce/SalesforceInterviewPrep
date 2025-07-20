@@ -1,0 +1,141 @@
+<div class="container">
+
+  <article>
+    <h2>🔁 Summary of Concepts Detailed</h2>
+    <p>This blog explains how to build, organize, and optimize reusable JavaScript functionality in Salesforce Lightning Web Components (LWC). You'll learn how to structure utility libraries, enforce encapsulation, implement lazy loading, and choose the right module strategy for performance and clarity.</p>
+    <ul>
+      <li>Shared utility module creation</li>
+      <li>Handling multiple JS files in a folder</li>
+      <li>Internal file exposure via re-export</li>
+      <li>Folder structure guidelines for modularization</li>
+      <li>JavaScript file size limits and modular strategies</li>
+      <li>Understanding component-level encapsulation</li>
+      <li>Performance benefits and caveats of lazy loading</li>
+    </ul>
+  </article>
+
+  <article>
+    <h2>1. Creating a Shared JavaScript Utility Module</h2>
+    <p>To create a reusable JavaScript module in LWC, you must place a <code>.js</code> file in its own folder with a <code>.js-meta.xml</code> file. This tells Salesforce that it's a module and not a component.</p>
+    <pre><code>lwc/
+  stringUtils/
+    stringUtils.js
+    stringUtils.js-meta.xml</code></pre>
+    <p>For example, in <code>stringUtils.js</code>:</p>
+    <pre><code>export function capitalize(str) {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}</code></pre>
+    <p>Any component can then import and use it:</p>
+    <pre><code>import { capitalize } from 'c/stringUtils';</code></pre>
+  </article>
+
+  <article>
+    <h2>2. Multiple JavaScript Files in a Module Folder</h2>
+    <p>You can include more than one JavaScript file in a module folder. However, only the file with the same name as the folder (e.g., <code>stringUtils.js</code> inside <code>stringUtils/</code>) is exposed for importing by other components.</p>
+    <p>Other files, such as <code>helperFunctions.js</code>, are considered internal and must be imported via relative path from the main module file.</p>
+    <pre><code>// helperFunctions.js
+export function padZero(num, length) {
+  return num.toString().padStart(length, '0');
+}
+
+// stringUtils.js
+import { padZero } from './helperFunctions';
+
+export function generateKey(prefix, number) {
+  return `${prefix}-${padZero(number, 5)}`;
+}</code></pre>
+    <p><strong>❌ Not Allowed:</strong> You can't import <code>helperFunctions.js</code> directly from other components.</p>
+  </article>
+
+  <article>
+    <h2>3. Re-Exporting Internal Helpers</h2>
+    <p>To make internal helpers available to the outside world, the main module file must import them and then re-export explicitly.</p>
+    <pre><code>// helper.js
+export function formatDate(d) { ... }
+
+// utils.js
+import { formatDate } from './helper';
+export { formatDate };
+
+// Now usable as:
+import { formatDate } from 'c/utils';</code></pre>
+    <p>This pattern is essential for maintaining encapsulation while still sharing reusable functions.</p>
+  </article>
+
+  <article>
+    <h2>4. No Subfolders: How to Modularize Instead</h2>
+    <p>Salesforce does not allow nested folders inside a module directory. To modularize, use one of the following approaches:</p>
+
+    <h3>Option A: Multiple Files in a Single Folder</h3>
+    <p>Use one folder, break logic into multiple files, and import all into the main module.</p>
+    <pre><code>lwc/
+  utils/
+    utils.js
+    mathUtil.js
+    stringUtil.js</code></pre>
+
+    <h3>Option B (Preferred): One Folder per Utility</h3>
+    <p>Create one folder per domain area. This improves readability and makes lazy loading easier.</p>
+    <pre><code>lwc/
+  mathUtils/
+    mathUtils.js
+    mathUtils.js-meta.xml
+
+  stringUtils/
+    stringUtils.js
+    stringUtils.js-meta.xml</code></pre>
+    <p>This structure is more maintainable and avoids bloating a single file.</p>
+  </article>
+
+  <article>
+    <h2>5. JavaScript File Size Limitations</h2>
+    <p>Salesforce imposes a 1 MB size limit on individual JavaScript files. If a module grows too large, you should:</p>
+    <ul>
+      <li>Split the logic into smaller modules</li>
+      <li>Use Option B above to isolate functionality</li>
+      <li>Use lazy loading to defer non-critical code</li>
+    </ul>
+    <p>There is no limit on the number of folders, so modularizing into many small files is preferred for scalability.</p>
+  </article>
+
+  <article>
+    <h2>6. Component Folder Encapsulation</h2>
+    <p>Unlike utility modules, JavaScript files within component folders are <strong>strictly private</strong> to the component. You cannot import code from one component’s JS file into another component.</p>
+    <pre><code>// ❌ Invalid
+import { doSomething } from 'c/myComponent';
+
+// ✅ Valid
+import { doSomething } from 'c/myUtils';</code></pre>
+    <p>Only utility modules marked with <code>.js-meta.xml</code> and placed outside components are reusable.</p>
+  </article>
+
+  <article>
+    <h2>7. Lazy Loading and Tree Shaking</h2>
+    <p>Lazy loading allows you to import modules only when needed, reducing initial bundle size. Use it when dealing with heavy, optional logic.</p>
+    <pre><code>async handleClick() {
+  const module = await import('c/reportUtils');
+  module.generateChart();
+}</code></pre>
+    <p><strong>Note:</strong> Lazy loading loads the <em>entire file</em>, not just the functions you use. This is different from static imports, which support tree shaking (removal of unused code).</p>
+    <pre><code>// Static import with tree shaking
+import { padZero } from 'c/mathUtils';</code></pre>
+    <p>Lazy imports are cached after the first load, so they're efficient if deferred features are needed occasionally.</p>
+  </article>
+
+  <article>
+    <h2>✅ Final Recommendations</h2>
+    <table>
+      <thead><tr><th>Task</th><th>Recommended Practice</th></tr></thead>
+      <tbody>
+        <tr><td>Create shared logic</td><td>Use utility modules with <code>.js</code> and <code>.js-meta.xml</code></td></tr>
+        <tr><td>Multiple files per module</td><td>Import internally and re-export through main file</td></tr>
+        <tr><td>Folder structure</td><td>Prefer one folder per utility (Option B)</td></tr>
+        <tr><td>Encapsulation</td><td>Don't import JS across components</td></tr>
+        <tr><td>Performance</td><td>Lazy load large or conditional logic</td></tr>
+        <tr><td>File size</td><td>Split files to stay under 1 MB</td></tr>
+      </tbody>
+    </table>
+  </article>
+
+</div>
+
